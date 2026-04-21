@@ -263,7 +263,7 @@
       <label>棋盤大小: <span id="sizeVal" style="color:var(--accent)">12</span></label>
       <input type="range" id="mapSize" min="4" max="20" value="12">
       
-      <label>地雷數量: <span id="mineVal" style="color:#ef4444">29</span></label>
+      <label>地雷數量: <span id="mineVal" style="color:#ef4444">39</span></label>
       <input type="range" id="mineCount" min="3" max="139" value="39">
       
       <button id="btnCreate" class="btn-action">建立並等待對手</button>
@@ -361,7 +361,7 @@
       mineCountInput.max = maxLimit;
       mineCountInput.step = 2; 
 
-      let defaultMines = Math.round(totalCells * 0.2);
+      let defaultMines = Math.round(totalCells * 0.27);
       if (defaultMines % 2 === 0) defaultMines++; 
       
       if (defaultMines < minLimit) defaultMines = minLimit;
@@ -387,7 +387,7 @@
     };
 
     let engine = { 
-      size: 12, minesCount: 29, mines: [], numbers: [], revealed: [], owners: [], 
+      size: 12, minesCount: 39, mines: [], numbers: [], revealed: [], owners: [], 
       scoreA: 0, scoreB: 0, turn: 'A', 
       timeMode: 'standard', timeA: 60, timeB: 60, lastMove: null
     };
@@ -508,7 +508,7 @@
         
         const safeHostName = escapeHTML(String(room.hostName));
         const safeSize = parseInt(room.size) || 12; 
-        const safeMines = parseInt(room.mines) || 29; 
+        const safeMines = parseInt(room.mines) || 39; 
         const safeId = escapeHTML(String(room.id)).replace(/'/g, ""); 
 
         card.innerHTML = `
