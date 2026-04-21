@@ -37,11 +37,31 @@
       overflow-y: auto; transition: all 0.5s ease;
     }
 
+    .sidebar-header {
+      position: relative; display: flex; align-items: center; justify-content: center; width: 100%;
+    }
+
     #sidebar h1 {
       margin: 0; font-size: 28px; text-transform: uppercase; text-align: center; font-weight: 900;
       background: linear-gradient(135deg, #3b82f6, #8b5cf6);
       -webkit-background-clip: text; -webkit-text-fill-color: transparent;
       text-shadow: 0 2px 10px rgba(59, 130, 246, 0.2);
+    }
+
+    /* 重新整理按鈕樣式 */
+    .btn-refresh {
+      position: absolute; right: 0; top: 50%; transform: translateY(-50%);
+      width: 36px; height: 36px; padding: 0; margin: 0;
+      background: rgba(255, 255, 255, 0.7); border: 1px solid var(--glass-border);
+      border-radius: 50%; font-size: 16px; display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05); cursor: pointer; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      backdrop-filter: blur(5px); color: #475569;
+    }
+    .btn-refresh:hover { 
+      background: #ffffff; 
+      transform: translateY(-50%) rotate(180deg); 
+      box-shadow: 0 4px 12px rgba(59,130,246,0.2); 
+      color: #3b82f6; border-color: #3b82f6;
     }
 
     .panel {
@@ -55,6 +75,7 @@
       justify-content: center; height: auto; min-height: unset; 
       padding: 10px 20px; background: transparent; border: none; box-shadow: none;
     }
+    body.game-on .sidebar-header .btn-refresh { display: none; /* 遊戲進行中隱藏重新整理，以免誤觸 */ }
     body.game-on #sidebar h1 { font-size: 32px; letter-spacing: 2px; }
 
     .player-setup { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
@@ -114,21 +135,16 @@
     .score-small-bottom { font-size: 14px; font-weight: bold; white-space: nowrap;}
     .score-main-row { width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; }
     
-    /* 玻璃質感重製：更新 game-container 樣式 */
     #game-container { 
       position: relative; border-radius: 20px; padding: 12px; 
-      /* 降低背景不透明度，讓更多底色透上來 */
       background: rgba(255, 255, 255, 0.2); 
       border: 1px solid rgba(255, 255, 255, 0.6); 
-      /* 增加內發光與外陰影 */
       box-shadow: 0 15px 35px rgba(0,0,0,0.1), inset 0 0 20px rgba(255,255,255,0.4); 
-      /* 強烈的 iOS 毛玻璃模糊與飽和度提升 */
       backdrop-filter: blur(25px) saturate(150%);
       -webkit-backdrop-filter: blur(25px) saturate(150%);
       transition: border-color 0.3s ease, box-shadow 0.3s ease;
     }
 
-    /* 確保遊戲進行時，外框會正常顯示當下玩家的顏色 */
     body.game-on #game-container {
       border: 2px solid var(--turn-color);
       box-shadow: 0 15px 35px rgba(0,0,0,0.1), 0 0 20px var(--turn-color), inset 0 0 15px rgba(255,255,255,0.4);
@@ -136,11 +152,10 @@
     
     canvas { 
       border-radius: 12px; 
-      background: transparent; /* 改為全透明 */
+      background: transparent; 
       cursor: crosshair; display: block; max-width: 100%; height: auto; 
     }
 
-    /* 調整 10 秒倒數警告的動畫，讓切換與閃爍更強烈 */
     @keyframes blink-turn {
       0%, 49.9% { 
         border-color: var(--turn-color); 
@@ -172,18 +187,29 @@
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.6); border-radius: 10px; }
 
+    /* ================= 手機版優化區 ================= */
     @media (max-aspect-ratio: 1/1) {
       body { flex-direction: column; }
+      
       body:not(.game-on) #sidebar { 
         width: 100%; height: 100vh; max-height: none; border-right: none; border-bottom: none; 
         flex-direction: column; justify-content: flex-start;
-        padding-bottom: 50px; 
+        /* 加入 env(safe-area-inset-bottom) 抵消 iOS 黑條，並加大底部留白確保滑動到底可看見所有內容 */
+        padding-bottom: calc(120px + env(safe-area-inset-bottom)); 
       }
       body:not(.game-on) .panel { width: 100%; box-sizing: border-box; flex: none; }
       body:not(.game-on) #main-area { display: none !important; } 
 
-      body.game-on #sidebar { width: 100%; height: auto; border-right: none; border-bottom: 1px solid var(--glass-border); padding: 5px 10px; }
-      body.game-on #main-area { display: flex !important; flex: 1; padding: 10px; }
+      body.game-on #sidebar { 
+        width: 100%; height: auto; border-right: none; border-bottom: 1px solid var(--glass-border); 
+        padding: 5px 10px; 
+      }
+      
+      body.game-on #main-area { 
+        display: flex !important; flex: 1; padding: 10px; 
+        /* 遊戲畫面底部也增加安全區域距離 */
+        padding-bottom: calc(20px + env(safe-area-inset-bottom));
+      }
       
       body:not(.game-on) #sidebar h1 { font-size: 22px; }
       body.game-on #sidebar h1 { font-size: 20px; }
@@ -205,7 +231,11 @@
 <body>
 
   <div id="sidebar">
-    <h1>Mine Duel</h1>
+    <div class="sidebar-header">
+      <h1>Mine Duel</h1>
+      <button class="btn-refresh" onclick="location.reload()" title="清空所有並刷新">🔄</button>
+    </div>
+    
     <div class="panel">
       <h3>1. 玩家設定</h3>
       <div class="player-setup">
@@ -701,7 +731,7 @@
       comboCount = 0; comboPlayer = null; 
 
       engine.turn = Math.random() < 0.5 ? 'A' : 'B';
-      engine.lastMove = null; // 初始化最後一步
+      engine.lastMove = null; 
       gameActive = true;
       document.body.classList.add('game-on'); 
 
@@ -741,7 +771,7 @@
       if (engine.revealed[idx]) return;
 
       engine.revealed[idx] = true;
-      engine.lastMove = { x: x, y: y, p: playerRole }; // 記錄最後一步
+      engine.lastMove = { x: x, y: y, p: playerRole }; 
 
       if (engine.mines[idx]) {
         engine.owners[idx] = playerRole;
@@ -805,7 +835,7 @@
         type: 'GAME_SYNC', gameActive: gameActive, size: engine.size, minesCount: engine.minesCount,
         scoreA: engine.scoreA, scoreB: engine.scoreB, turn: engine.turn, 
         timeMode: engine.timeMode, timeA: engine.timeA, timeB: engine.timeB,
-        lastMove: engine.lastMove, // 同步最後一步
+        lastMove: engine.lastMove,
         cells: cells
       });
     }
@@ -827,9 +857,6 @@
       }
     });
 
-    // ==========================================
-    // 玻璃質感繪圖引擎 (方案 2 + 3 核心更新)
-    // ==========================================
     function drawRoundedRect(ctx, x, y, width, height, radius) {
       ctx.beginPath();
       ctx.moveTo(x + radius, y);
@@ -845,7 +872,6 @@
     }
 
     function drawBoard() {
-      // 清除畫布，保持透明
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       const grid = isHost ? engine.size : (clientView ? clientView.size : 12);
       if (!grid) return;
@@ -862,7 +888,6 @@
           
           if (isHost) {
             rev = engine.revealed[idx]; mine = engine.mines[idx]; owner = engine.owners[idx]; num = engine.numbers[idx];
-            // 判斷是否為最後一步
             if (engine.lastMove && engine.lastMove.x === x && engine.lastMove.y === y) {
               isLastMove = true; lastP = engine.lastMove.p;
             }
@@ -870,23 +895,19 @@
             if(!clientView) return;
             let c = clientView.cells[idx];
             rev = c.r; mine = c.m; owner = c.o; num = c.n;
-            // 判斷是否為最後一步
             if (clientView.lastMove && clientView.lastMove.x === x && clientView.lastMove.y === y) {
               isLastMove = true; lastP = clientView.lastMove.p;
             }
           }
 
-          // 加入間距 (Padding)，徹底解決邊界被覆蓋的問題
           const pad = 2; 
           const cx = cellX + pad;
           const cy = cellY + pad;
           const cw = cellSize - pad * 2;
           const ch = cellSize - pad * 2;
-          const radius = Math.max(3, cw * 0.15); // 動態圓角
+          const radius = Math.max(3, cw * 0.15); 
 
           if (!rev) {
-            // 未翻開：立體玻璃磚
-            // 1. 玻璃半透明漸層底色
             const grad = ctx.createLinearGradient(cx, cy, cx, cy + ch);
             grad.addColorStop(0, 'rgba(255, 255, 255, 0.85)');
             grad.addColorStop(1, 'rgba(255, 255, 255, 0.3)');
@@ -894,20 +915,17 @@
             drawRoundedRect(ctx, cx, cy, cw, ch, radius);
             ctx.fill();
 
-            // 2. 玻璃邊緣的高光反光 (左與上)
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
             ctx.lineWidth = 1.5;
             drawRoundedRect(ctx, cx + 1, cy + 1, cw - 2, ch - 2, radius);
             ctx.stroke();
 
-            // 3. 玻璃底部的微弱陰影
             ctx.strokeStyle = 'rgba(0, 0, 0, 0.08)';
             ctx.lineWidth = 1;
             drawRoundedRect(ctx, cx, cy, cw, ch, radius);
             ctx.stroke();
 
           } else {
-            // 已翻開：凹陷的平滑玻璃
             ctx.fillStyle = 'rgba(255, 255, 255, 0.1)'; 
             drawRoundedRect(ctx, cx, cy, cw, ch, radius);
             ctx.fill();
@@ -918,46 +936,40 @@
             ctx.stroke();
 
             if (mine) {
-              // 地雷與玩家顏色光暈
               const pColor = (owner === 'A') ? players.A.color : players.B.color;
-              
-              // 在格子內部畫一個漸層發光背景
               const glowGrad = ctx.createRadialGradient(cx + cw/2, cy + ch/2, 0, cx + cw/2, cy + ch/2, cw);
-              glowGrad.addColorStop(0, pColor + '99'); // 中心較濃 (HEX + Alpha)
-              glowGrad.addColorStop(1, pColor + '20'); // 邊緣變淡
+              glowGrad.addColorStop(0, pColor + '99'); 
+              glowGrad.addColorStop(1, pColor + '20'); 
               
               ctx.fillStyle = glowGrad;
               drawRoundedRect(ctx, cx + 1, cy + 1, cw - 2, ch - 2, radius);
               ctx.fill();
 
-              // 發光的旗幟
               ctx.shadowColor = pColor;
               ctx.shadowBlur = 12;
               ctx.font = `${ch * 0.55}px Arial`; 
               ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
               ctx.fillText('🚩', cx + cw/2, cy + ch/2 + 2);
-              ctx.shadowBlur = 0; // 重置陰影
+              ctx.shadowBlur = 0; 
 
             } else if (num > 0) {
-              // 發光的數字
               const colors = ['#2563eb', '#16a34a', '#dc2626', '#9333ea', '#ea580c', '#0d9488', '#475569', '#0f172a'];
               const cStr = colors[num - 1] || '#475569';
               
-              ctx.shadowColor = cStr + '80'; // 加上與文字同色的光暈
+              ctx.shadowColor = cStr + '80'; 
               ctx.shadowBlur = 8;
               ctx.font = `900 ${ch * 0.55}px monospace`; 
               ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
               ctx.fillStyle = cStr; 
               ctx.fillText(num, cx + cw/2, cy + ch/2 + 2); 
-              ctx.shadowBlur = 0; // 重置陰影
+              ctx.shadowBlur = 0; 
             }
           }
 
-          // 在每個格子的處理邏輯最底部，疊加繪製最後一步的淺色光圈
           if (isLastMove) {
             ctx.save();
             const pColor = (lastP === 'A') ? players.A.color : players.B.color;
-            ctx.strokeStyle = pColor + '80'; // 添加 80 代表透明度，達到淺色包圍的效果
+            ctx.strokeStyle = pColor + '80'; 
             ctx.lineWidth = 4;
             ctx.shadowColor = pColor;
             ctx.shadowBlur = 12;
