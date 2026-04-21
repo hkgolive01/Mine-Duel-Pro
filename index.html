@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mine Duel</title>
+  <title>Mine Duel - Practice Mode</title>
   
   <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
   <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
@@ -48,35 +48,24 @@
       text-shadow: 0 2px 10px rgba(59, 130, 246, 0.2);
     }
 
-    .btn-refresh {
-      position: absolute; right: 0; top: 50%; transform: translateY(-50%);
+    .btn-refresh, .btn-sound {
+      position: absolute; top: 50%; transform: translateY(-50%);
       width: 36px; height: 36px; padding: 0; margin: 0;
       background: rgba(255, 255, 255, 0.7); border: 1px solid var(--glass-border);
       border-radius: 50%; font-size: 16px; display: flex; align-items: center; justify-content: center;
       box-shadow: 0 2px 8px rgba(0,0,0,0.05); cursor: pointer; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
       backdrop-filter: blur(5px); color: #475569;
     }
-    .btn-refresh:hover { 
+    .btn-refresh { right: 0; }
+    .btn-sound { left: 0; }
+    
+    .btn-refresh:hover, .btn-sound:hover { 
       background: #ffffff; 
-      transform: translateY(-50%) rotate(180deg); 
       box-shadow: 0 4px 12px rgba(59,130,246,0.2); 
       color: #3b82f6; border-color: #3b82f6;
     }
-
-    .btn-sound {
-      position: absolute; left: 0; top: 50%; transform: translateY(-50%);
-      width: 36px; height: 36px; padding: 0; margin: 0;
-      background: rgba(255, 255, 255, 0.7); border: 1px solid var(--glass-border);
-      border-radius: 50%; font-size: 16px; display: flex; align-items: center; justify-content: center;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.05); cursor: pointer; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-      backdrop-filter: blur(5px); color: #475569;
-    }
-    .btn-sound:hover { 
-      background: #ffffff; 
-      transform: translateY(-50%) scale(1.1); 
-      box-shadow: 0 4px 12px rgba(59,130,246,0.2); 
-      color: #3b82f6; border-color: #3b82f6;
-    }
+    .btn-refresh:hover { transform: translateY(-50%) rotate(180deg); }
+    .btn-sound:hover { transform: translateY(-50%) scale(1.1); }
 
     .panel {
       background: rgba(255, 255, 255, 0.6); border: 1px solid var(--glass-border);
@@ -102,9 +91,6 @@
     label { display: block; margin-bottom: 5px; font-size: 14px; margin-top: 10px; color: #475569; font-weight: bold;}
     input[type="range"] { width: 100%; cursor: pointer; accent-color: var(--accent); }
 
-    .checkbox-label { display: flex; align-items: center; gap: 8px; cursor: pointer; color: #1e293b; margin-top: 0;}
-    .checkbox-label input { width: 18px; height: 18px; cursor: pointer; accent-color: var(--accent);}
-
     button { width: 100%; background: rgba(255, 255, 255, 0.7); color: var(--accent); border: 1px solid rgba(255, 255, 255, 0.9); padding: 10px; border-radius: 12px; font-weight: bold; font-size: 15px; cursor: pointer; margin-top: 10px; transition: all 0.3s; box-shadow: 0 4px 15px rgba(0,0,0,0.05); backdrop-filter: blur(5px); }
     button:hover { background: #ffffff; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(59,130,246,0.15); color: #2563eb; }
     button:disabled { background: rgba(226, 232, 240, 0.5); cursor: not-allowed; transform: none; box-shadow: none; color: #94a3b8; border-color: transparent;}
@@ -112,6 +98,8 @@
     .btn-action:hover { background: linear-gradient(135deg, #2563eb, #3b82f6); color: white; }
     .btn-danger { background: linear-gradient(135deg, #ef4444, #f87171); color: white; border: none; }
     .btn-danger:hover { background: linear-gradient(135deg, #dc2626, #ef4444); color: white; }
+    .btn-practice { background: linear-gradient(135deg, #10b981, #34d399); color: white; border: none; }
+    .btn-practice:hover { background: linear-gradient(135deg, #059669, #10b981); color: white; }
 
     #roomListContainer { max-height: 180px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin-top: 10px; padding-right: 5px; }
     .room-card { background: rgba(255, 255, 255, 0.8); border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px; display: flex; flex-direction: column; gap: 5px; transition: 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
@@ -136,7 +124,7 @@
     }
 
     .player-col { width: 35%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; overflow: hidden; }
-    .score-col { width: 30%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; overflow: hidden; }
+    .score-col { width: 30%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; overflow: hidden; position: relative;}
 
     .fit-box-name { width: 100%; height: 42px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
     .fit-box-time { width: 100%; height: 36px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
@@ -150,6 +138,12 @@
     .score-small-bottom { font-size: 14px; font-weight: bold; white-space: nowrap;}
     .score-main-row { width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; }
     
+    #btnToggleAI {
+      display: none; width: auto; padding: 4px 12px; font-size: 13px; border-radius: 8px; margin-top: 5px;
+      border: 1px solid #cbd5e1; background: #f1f5f9; color: #475569; cursor: pointer; font-weight: bold; transition: 0.2s;
+    }
+    #btnToggleAI.active { background: #10b981; color: white; border-color: #059669; }
+
     #game-container { 
       position: relative; border-radius: 20px; padding: 12px; 
       background: rgba(255, 255, 255, 0.2); 
@@ -165,25 +159,13 @@
       box-shadow: 0 15px 35px rgba(0,0,0,0.1), 0 0 20px var(--turn-color), inset 0 0 15px rgba(255,255,255,0.4);
     }
     
-    canvas { 
-      border-radius: 12px; 
-      background: transparent; 
-      cursor: crosshair; display: block; max-width: 100%; height: auto; 
-    }
+    canvas { border-radius: 12px; background: transparent; cursor: crosshair; display: block; max-width: 100%; height: auto; }
 
     @keyframes blink-turn {
-      0%, 49.9% { 
-        border-color: var(--turn-color); 
-        box-shadow: 0 0 35px var(--turn-color), inset 0 0 25px var(--turn-color); 
-      }
-      50%, 100% { 
-        border-color: rgba(255,255,255,0.6); 
-        box-shadow: 0 15px 35px rgba(0,0,0,0.1), inset 0 0 20px rgba(255,255,255,0.4); 
-      }
+      0%, 49.9% { border-color: var(--turn-color); box-shadow: 0 0 35px var(--turn-color), inset 0 0 25px var(--turn-color); }
+      50%, 100% { border-color: rgba(255,255,255,0.6); box-shadow: 0 15px 35px rgba(0,0,0,0.1), inset 0 0 20px rgba(255,255,255,0.4); }
     }
-    #game-container.urgent {
-      animation: blink-turn 0.6s infinite;
-    }
+    #game-container.urgent { animation: blink-turn 0.6s infinite; }
 
     #overlay {
       position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 16px;
@@ -205,37 +187,17 @@
     /* ================= 手機版優化區 ================= */
     @media (max-aspect-ratio: 1/1) {
       body { flex-direction: column; }
-      
-      body:not(.game-on) #sidebar { 
-        width: 100%; height: 100vh; max-height: none; border-right: none; border-bottom: none; 
-        flex-direction: column; justify-content: flex-start;
-        padding-bottom: calc(120px + env(safe-area-inset-bottom)); 
-      }
+      body:not(.game-on) #sidebar { width: 100%; height: 100vh; max-height: none; border-right: none; border-bottom: none; flex-direction: column; justify-content: flex-start; padding-bottom: calc(120px + env(safe-area-inset-bottom)); }
       body:not(.game-on) .panel { width: 100%; box-sizing: border-box; flex: none; }
       body:not(.game-on) #main-area { display: none !important; } 
-
-      body.game-on #sidebar { 
-        width: 100%; height: auto; border-right: none; border-bottom: 1px solid var(--glass-border); 
-        padding: 5px 10px; 
-      }
-      
-      body.game-on #main-area { 
-        display: flex !important; flex: 1; padding: 10px; 
-        padding-bottom: calc(20px + env(safe-area-inset-bottom));
-      }
-      
+      body.game-on #sidebar { width: 100%; height: auto; border-right: none; border-bottom: 1px solid var(--glass-border); padding: 5px 10px; }
+      body.game-on #main-area { display: flex !important; flex: 1; padding: 10px; padding-bottom: calc(20px + env(safe-area-inset-bottom));}
       body:not(.game-on) #sidebar h1 { font-size: 22px; }
       body.game-on #sidebar h1 { font-size: 20px; }
-      
       #hud { padding: 10px; flex-wrap: wrap; }
       #hudA { width: 50%; order: 1; }
       #hudB { width: 50%; order: 2; }
-      
-      #hudCenter { 
-        width: 100%; order: 3; margin-top: 10px; padding-top: 8px;
-        border-top: 1px dashed rgba(148, 163, 184, 0.4); 
-      }
-      
+      #hudCenter { width: 100%; order: 3; margin-top: 10px; padding-top: 8px; border-top: 1px dashed rgba(148, 163, 184, 0.4); }
       .score-main-row { justify-content: space-between; padding: 0 10px; }
       .score-small-top, .score-small-bottom { font-size: 13px; transform: scale(1); }
     }
@@ -270,7 +232,6 @@
         <option value="fast">⚡ 快速 (20秒 + 2秒/步)</option>
         <option value="standard" selected>⏳ 標準 (60秒 + 3秒/步)</option>
         <option value="slow">🐢 慢速 (120秒 + 4秒/步)</option>
-        <option value="unlimited">⏱️ 不限時 (僅記錄時間)</option>
       </select>
       
       <label>棋盤大小: <span id="sizeVal" style="color:var(--accent)">12</span></label>
@@ -296,6 +257,13 @@
         <button id="btnManualJoin" class="btn-action">加入</button>
       </div>
     </div>
+
+    <!-- 本機練習模式介面 -->
+    <div class="panel" id="practicePanel">
+      <h3>4. 本機練習模式 🛠️</h3>
+      <p style="font-size: 13px; color: #475569; margin-bottom: 10px;">單機雙人熱座對戰，無計時。戰鬥中可隨時開關 AI 機率算法檢查解法。</p>
+      <button id="btnStartPractice" class="btn-practice">進入練習模式</button>
+    </div>
   </div>
 
   <div id="main-area">
@@ -307,7 +275,6 @@
       
       <div id="hudCenter" class="score-col">
         <div class="score-small-top" id="remMinesText">剩餘地雷: --</div>
-        <!-- 讓比分獨立一層，不跟文字擠在一起 -->
         <div class="fit-box-score" style="margin: 5px 0;">
           <div class="score-large" id="scoreLargeText">
             <span id="scoreA" style="color:#3b82f6">0</span>
@@ -315,11 +282,12 @@
             <span id="scoreB" style="color:#ef4444">0</span>
           </div>
         </div>
-        <!-- 再奪個數 放在比分正下方 -->
         <div class="score-main-row" style="gap: 20px;">
           <div class="score-small-bottom"><span id="reqA" style="color:#3b82f6">再奪-個</span></div>
           <div class="score-small-bottom"><span id="reqB" style="color:#ef4444">再奪-個</span></div>
         </div>
+        <!-- 戰鬥階段隨時切換 AI 的按鈕 -->
+        <button id="btnToggleAI">🤖 顯示 AI 機率</button>
       </div>
 
       <div id="hudB" class="player-col">
@@ -356,9 +324,420 @@
     soundToggleBtn.addEventListener('click', () => {
       isSoundOn = !isSoundOn;
       soundToggleBtn.innerText = isSoundOn ? '🔊' : '🔇';
-      // 解除瀏覽器音效限制
       if (audioCtx.state === 'suspended') audioCtx.resume();
     });
+
+    // ================= 本機練習模式與 AI 變數邏輯 =================
+    let isPracticeMode = false;
+    let isAIToggledOn = false;
+    let aiProbabilities = [];
+    const btnToggleAI = document.getElementById('btnToggleAI');
+
+    btnToggleAI.addEventListener('click', () => {
+      isAIToggledOn = !isAIToggledOn;
+      if (isAIToggledOn) {
+        btnToggleAI.classList.add('active');
+        btnToggleAI.innerText = '🤖 關閉 AI 機率';
+        if (gameActive) calculateAIProbabilities();
+      } else {
+        btnToggleAI.classList.remove('active');
+        btnToggleAI.innerText = '🤖 顯示 AI 機率';
+        aiProbabilities = Array(engine.size * engine.size).fill(null); // 清空計算結果，節省記憶體與渲染
+      }
+      drawBoard();
+    });
+
+    document.getElementById('btnStartPractice').addEventListener('click', () => {
+      if (audioCtx.state === 'suspended') audioCtx.resume(); 
+      isHost = true;
+      isPracticeMode = true;
+      players.A = { name: myNameInput.value || "Player 1", color: myColorInput.value };
+      players.B = { name: "Player 2", color: getContrastingColor(myColorInput.value, "#ef4444") };
+      
+      engine.size = parseInt(document.getElementById('mapSize').value);
+      engine.minesCount = parseInt(document.getElementById('mineCount').value);
+      engine.timeMode = 'none'; // 取消計時
+      
+      btnToggleAI.style.display = 'block'; // 顯示戰鬥中 AI 開關
+      
+      stopBroadcastingLobby();
+      if(peer) peer.destroy();
+      if(conn) conn.close();
+
+      document.getElementById('createPanel').style.opacity = '0.5';
+      document.getElementById('createPanel').style.pointerEvents = 'none';
+      document.getElementById('lobbyPanel').style.opacity = '0.5';
+      document.getElementById('lobbyPanel').style.pointerEvents = 'none';
+      document.getElementById('practicePanel').style.opacity = '0.5';
+      document.getElementById('practicePanel').style.pointerEvents = 'none';
+      
+      startGameEngine();
+    });
+
+  // 核心：精確且安全的 BigInt 組合數計算
+function getCombinations(n, k) {
+  if (k < 0 || k > n || n < 0) return 0n;
+  if (k === 0 || k === n) return 1n;
+  let bn = BigInt(n), bk = BigInt(k);
+  if (bk > bn / 2n) bk = bn - bk;
+  let res = 1n;
+  for (let i = 1n; i <= bk; i++) {
+    res = (res * bn - res * (i - 1n)) / i;
+  }
+  return res;
+}
+
+// 終極版：區域化 AI 機率計算引擎 (Region-Based Solver)
+function calculateAIProbabilities() {
+  const totalCells = engine.size * engine.size;
+  // 假設 aiProbabilities 是全域變數，初始化為 0
+  aiProbabilities = Array(totalCells).fill(0);
+
+  let totalRemainingMines = engine.minesCount - engine.scoreA - engine.scoreB;
+  let unrevealed = new Set();
+  
+  for (let i = 0; i < totalCells; i++) {
+    if (!engine.revealed[i]) unrevealed.add(i);
+  }
+  if (unrevealed.size === 0) return;
+
+  let knownMines = new Set();
+  let knownSafe = new Set();
+
+  // 階段一：基礎推導，清理明顯的地雷與安全格
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (let i = 0; i < totalCells; i++) {
+      if (engine.revealed[i] && engine.numbers[i] > 0 && !engine.mines[i]) {
+        let unrevNeighbors = [];
+        let mineCount = 0;
+        let x = i % engine.size, y = Math.floor(i / engine.size);
+        for (let dy = -1; dy <= 1; dy++) {
+          for (let dx = -1; dx <= 1; dx++) {
+            if (dx === 0 && dy === 0) continue;
+            let nx = x + dx, ny = y + dy;
+            if (nx >= 0 && nx < engine.size && ny >= 0 && ny < engine.size) {
+              let nIdx = ny * engine.size + nx;
+              if ((engine.revealed[nIdx] && engine.mines[nIdx]) || knownMines.has(nIdx)) {
+                mineCount++;
+              } else if (!engine.revealed[nIdx] && !knownSafe.has(nIdx)) {
+                unrevNeighbors.push(nIdx);
+              }
+            }
+          }
+        }
+        let req = engine.numbers[i] - mineCount;
+        if (req === unrevNeighbors.length && req > 0) {
+          unrevNeighbors.forEach(u => { knownMines.add(u); unrevealed.delete(u); });
+          changed = true;
+        } else if (req === 0 && unrevNeighbors.length > 0) {
+          unrevNeighbors.forEach(u => { knownSafe.add(u); unrevealed.delete(u); });
+          changed = true;
+        }
+      }
+    }
+  }
+
+  // 寫入 100% 和 0% 機率
+  for (let u of knownMines) aiProbabilities[u] = 1.0;
+  for (let u of knownSafe) aiProbabilities[u] = 0.0;
+
+  let dynamicRemainingMines = totalRemainingMines - knownMines.size;
+  let constraints = [];
+  let frontierSet = new Set();
+
+  // 階段二：建立限制條件 (Constraints)
+  for (let i = 0; i < totalCells; i++) {
+    if (engine.revealed[i] && engine.numbers[i] > 0 && !engine.mines[i]) {
+      let x = i % engine.size, y = Math.floor(i / engine.size);
+      let uncertain = [];
+      let mineCount = 0;
+      for (let dy = -1; dy <= 1; dy++) {
+        for (let dx = -1; dx <= 1; dx++) {
+          if (dx === 0 && dy === 0) continue;
+          let nx = x + dx, ny = y + dy;
+          if (nx >= 0 && nx < engine.size && ny >= 0 && ny < engine.size) {
+            let nIdx = ny * engine.size + nx;
+            if ((engine.revealed[nIdx] && engine.mines[nIdx]) || knownMines.has(nIdx)) {
+              mineCount++;
+            } else if (!engine.revealed[nIdx] && !knownSafe.has(nIdx)) {
+              uncertain.push(nIdx);
+              frontierSet.add(nIdx);
+            }
+          }
+        }
+      }
+      if (uncertain.length > 0) {
+        constraints.push({ cells: uncertain, req: engine.numbers[i] - mineCount });
+      }
+    }
+  }
+
+  let unknownCells = [];
+  for (let u of unrevealed) {
+    if (!frontierSet.has(u)) unknownCells.push(u);
+  }
+
+  let isDpSuccess = false;
+
+  if (constraints.length > 0) {
+    // 階段三：高階區域劃分 (Region Building) —— 解決罷工的核心！
+    let cellToConstraints = new Map();
+    frontierSet.forEach(c => cellToConstraints.set(c, []));
+    constraints.forEach((con, cIdx) => {
+      con.cells.forEach(c => cellToConstraints.get(c).push(cIdx));
+    });
+
+    // 將受到「完全相同限制」的格子打包成一個 Region
+    let regionsMap = new Map();
+    frontierSet.forEach(c => {
+      let sig = cellToConstraints.get(c).sort((a, b) => a - b).join(',');
+      if (!regionsMap.has(sig)) {
+        regionsMap.set(sig, { cells: [], constraints: cellToConstraints.get(c) });
+      }
+      regionsMap.get(sig).cells.push(c);
+    });
+
+    let regions = Array.from(regionsMap.values());
+    let constraintToRegions = Array(constraints.length).fill().map(() => []);
+    regions.forEach((reg, rIdx) => {
+      reg.constraints.forEach(cIdx => constraintToRegions[cIdx].push(rIdx));
+    });
+
+    // 尋找互相獨立的區塊 (Connected Components)
+    let adj = Array(regions.length).fill().map(() => []);
+    constraints.forEach((con, cIdx) => {
+      let regs = constraintToRegions[cIdx];
+      for (let i = 0; i < regs.length; i++) {
+        for (let j = i + 1; j < regs.length; j++) {
+          adj[regs[i]].push(regs[j]);
+          adj[regs[j]].push(regs[i]);
+        }
+      }
+    });
+
+    let visited = Array(regions.length).fill(false);
+    let components = [];
+    for (let i = 0; i < regions.length; i++) {
+      if (!visited[i]) {
+        let compRegs = [];
+        let q = [i];
+        visited[i] = true;
+        while (q.length > 0) {
+          let curr = q.shift();
+          compRegs.push(curr);
+          for (let nxt of adj[curr]) {
+            if (!visited[nxt]) {
+              visited[nxt] = true;
+              q.push(nxt);
+            }
+          }
+        }
+        components.push(compRegs);
+      }
+    }
+
+    let componentResults = [];
+    let globalAbort = false;
+
+    // 階段四：對 Region 進行動態規劃與回溯
+    for (let compRegs of components) {
+      if (globalAbort) break;
+
+      let compConstraintsSet = new Set();
+      compRegs.forEach(rIdx => regions[rIdx].constraints.forEach(cIdx => compConstraintsSet.add(cIdx)));
+      let compConstraints = Array.from(compConstraintsSet);
+
+      let waysByMines = new Map();
+      let regionMinesWays = new Map();
+      compRegs.forEach(rIdx => regionMinesWays.set(rIdx, new Map()));
+
+      let localAssigned = new Map();
+
+      function backtrackReg(idx) {
+        if (idx === compRegs.length) {
+          // 驗證限制條件是否完美符合
+          for (let cIdx of compConstraints) {
+            let sum = 0;
+            for (let rIdx of constraintToRegions[cIdx]) sum += localAssigned.get(rIdx);
+            if (sum !== constraints[cIdx].req) return;
+          }
+
+          let m = 0;
+          let ways = 1n;
+          // 計算 Region 層級的組合數 (不再窮舉每個 Cell！)
+          for (let rIdx of compRegs) {
+            let assigned = localAssigned.get(rIdx);
+            m += assigned;
+            ways *= getCombinations(regions[rIdx].cells.length, assigned);
+          }
+
+          waysByMines.set(m, (waysByMines.get(m) || 0n) + ways);
+          for (let rIdx of compRegs) {
+            let assigned = localAssigned.get(rIdx);
+            let rMap = regionMinesWays.get(rIdx);
+            rMap.set(m, (rMap.get(m) || 0n) + ways * BigInt(assigned));
+          }
+          return;
+        }
+
+        let rIdx = compRegs[idx];
+        let maxMines = regions[rIdx].cells.length;
+
+        // 嘗試分配 0 ~ N 顆地雷給這個 Region
+        for (let val = 0; val <= maxMines; val++) {
+          localAssigned.set(rIdx, val);
+          let valid = true;
+
+          // 極速剪枝
+          for (let cIdx of regions[rIdx].constraints) {
+            let sumAssigned = 0, maxRemaining = 0;
+            for (let crIdx of constraintToRegions[cIdx]) {
+              if (localAssigned.has(crIdx)) sumAssigned += localAssigned.get(crIdx);
+              else maxRemaining += regions[crIdx].cells.length;
+            }
+            if (sumAssigned > constraints[cIdx].req || sumAssigned + maxRemaining < constraints[cIdx].req) {
+              valid = false; break;
+            }
+          }
+
+          if (valid) backtrackReg(idx + 1);
+          localAssigned.delete(rIdx);
+        }
+      }
+
+      backtrackReg(0);
+
+      if (waysByMines.size === 0) {
+        globalAbort = true; // 出現嚴重邏輯矛盾
+        break; 
+      }
+      componentResults.push({ waysByMines, regionMinesWays });
+    }
+
+    if (!globalAbort) {
+      let N = componentResults.length;
+      let prefixDp = [new Map([[0, 1n]])];
+
+      for (let i = 0; i < N; i++) {
+        let nextDp = new Map();
+        for (let [m1, w1] of prefixDp[i].entries()) {
+          for (let [m2, w2] of componentResults[i].waysByMines.entries()) {
+            let total = m1 + m2;
+            nextDp.set(total, (nextDp.get(total) || 0n) + w1 * w2);
+          }
+        }
+        prefixDp.push(nextDp);
+      }
+
+      let suffixDp = Array(N + 1);
+      suffixDp[N] = new Map([[0, 1n]]);
+      for (let i = N - 1; i >= 0; i--) {
+        let nextDp = new Map();
+        for (let [m1, w1] of suffixDp[i + 1].entries()) {
+          for (let [m2, w2] of componentResults[i].waysByMines.entries()) {
+            let total = m1 + m2;
+            nextDp.set(total, (nextDp.get(total) || 0n) + w1 * w2);
+          }
+        }
+        suffixDp[i] = nextDp;
+      }
+
+      let finalDp = prefixDp[N];
+      let totalValidBoards = 0n;
+      let unknownSize = unknownCells.length;
+
+      for (let [m, count] of finalDp.entries()) {
+        let remain = dynamicRemainingMines - m;
+        if (remain >= 0 && remain <= unknownSize) {
+          totalValidBoards += count * getCombinations(unknownSize, remain);
+        }
+      }
+
+      // 容錯防禦：如果因為遊戲計分狀態出錯導致全局地雷數對不上
+      // 我們轉為「忽略總數限制 (Ignore Global Limit)」，優先保障局部準確度！
+      let ignoreGlobalLimit = false;
+      if (totalValidBoards === 0n) {
+        ignoreGlobalLimit = true;
+        for (let [m, count] of finalDp.entries()) totalValidBoards += count;
+      }
+
+      if (totalValidBoards > 0n) {
+        isDpSuccess = true;
+
+        for (let i = 0; i < N; i++) {
+          let comp = componentResults[i];
+          let otherDp = new Map();
+          for (let [m1, w1] of prefixDp[i].entries()) {
+            for (let [m2, w2] of suffixDp[i + 1].entries()) {
+              let m = m1 + m2;
+              otherDp.set(m, (otherDp.get(m) || 0n) + w1 * w2);
+            }
+          }
+
+          for (let [rIdx, rWaysMap] of comp.regionMinesWays.entries()) {
+            let regMinesWaysSum = 0n;
+            for (let [m_comp, w_comp] of rWaysMap.entries()) {
+              for (let [m_other, w_other] of otherDp.entries()) {
+                let m_total = m_comp + m_other;
+                if (!ignoreGlobalLimit) {
+                  let remain = dynamicRemainingMines - m_total;
+                  if (remain >= 0 && remain <= unknownSize) {
+                    regMinesWaysSum += w_comp * w_other * getCombinations(unknownSize, remain);
+                  }
+                } else {
+                  regMinesWaysSum += w_comp * w_other;
+                }
+              }
+            }
+            
+            let expectedMinesInRegion = Number((regMinesWaysSum * 100000n) / totalValidBoards) / 100000;
+            let cellProb = expectedMinesInRegion / regions[rIdx].cells.length;
+            for (let cIdx of regions[rIdx].cells) aiProbabilities[cIdx] = cellProb;
+          }
+        }
+
+        if (unknownSize > 0) {
+          if (!ignoreGlobalLimit) {
+            let expectedUnknownWays = 0n;
+            for (let [m_total, count] of finalDp.entries()) {
+              let remain = dynamicRemainingMines - m_total;
+              if (remain >= 0 && remain <= unknownSize) {
+                expectedUnknownWays += count * getCombinations(unknownSize, remain) * BigInt(remain);
+              }
+            }
+            let unkProb = Number((expectedUnknownWays * 100000n) / (totalValidBoards * BigInt(unknownSize))) / 100000;
+            for (let u of unknownCells) aiProbabilities[u] = unkProb;
+          } else {
+            // 如果全局錯亂，未知區域我們就保守歸零或不顯示
+            for (let u of unknownCells) aiProbabilities[u] = 0.0;
+          }
+        }
+      }
+    }
+  } else {
+    // 遊戲開局完全沒有提示的狀態
+    isDpSuccess = true;
+    let p = unknownCells.length > 0 ? Math.min(1.0, Math.max(0, dynamicRemainingMines / unknownCells.length)) : 0;
+    for (let u of unknownCells) aiProbabilities[u] = p;
+  }
+
+  // 極限備用保護 (只在發生超級異常時觸發)
+  if (!isDpSuccess) {
+    let active = [...frontierSet, ...unknownCells];
+    let p = active.length > 0 ? Math.min(1.0, Math.max(0, dynamicRemainingMines / active.length)) : 0;
+    for (let u of active) aiProbabilities[u] = p;
+  }
+
+  // 確保 100% 和 0% 不受浮點誤差干擾
+  for (let i = 0; i < totalCells; i++) {
+    if (!engine.revealed[i] && aiProbabilities[i] !== null) {
+      if (aiProbabilities[i] > 0.999) aiProbabilities[i] = 1.0;
+      if (aiProbabilities[i] < 0.001) aiProbabilities[i] = 0.0;
+    }
+  }
+}
 
     const mapSizeInput = document.getElementById('mapSize');
     const mineCountInput = document.getElementById('mineCount');
@@ -369,30 +748,16 @@
 
     const niceColors = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6', '#f43f5e', '#ea580c', '#06b6d4'];
     
-    // 1. 網頁載入時，嘗試從 localStorage 讀取玩家名稱與顏色
     const savedName = localStorage.getItem('mineDuelName');
     const savedColor = localStorage.getItem('mineDuelColor');
 
-    if (savedName) {
-      myNameInput.value = savedName; // 若有儲存名稱，則套用
-    }
-    if (savedColor) {
-      myColorInput.value = savedColor; // 若有儲存顏色，則套用
-    } else {
-      // 若無儲存顏色，則隨機產生一個並寫入 input
-      myColorInput.value = niceColors[Math.floor(Math.random() * niceColors.length)];
-    }
+    if (savedName) { myNameInput.value = savedName; }
+    if (savedColor) { myColorInput.value = savedColor; } 
+    else { myColorInput.value = niceColors[Math.floor(Math.random() * niceColors.length)]; }
 
-    // 2. 當玩家更改名稱或顏色時，即時儲存到 localStorage
-    myNameInput.addEventListener('input', (e) => {
-      localStorage.setItem('mineDuelName', e.target.value);
-    });
+    myNameInput.addEventListener('input', (e) => { localStorage.setItem('mineDuelName', e.target.value); });
+    myColorInput.addEventListener('input', (e) => { localStorage.setItem('mineDuelColor', e.target.value); });
 
-    myColorInput.addEventListener('input', (e) => {
-      localStorage.setItem('mineDuelColor', e.target.value);
-    });
-
-    // --- 顏色防撞算法 Helper 函數 ---
     function hexToRgb(hex) {
       const bigint = parseInt(hex.replace('#',''), 16);
       return [(bigint >> 16) & 255, (bigint >> 8) & 255, bigint & 255];
@@ -401,27 +766,19 @@
     function getColorDistance(hex1, hex2) {
       const [r1, g1, b1] = hexToRgb(hex1);
       const [r2, g2, b2] = hexToRgb(hex2);
-      // 計算三維 RGB 空間的歐幾里得距離
       return Math.sqrt(Math.pow(r1 - r2, 2) + Math.pow(g1 - g2, 2) + Math.pow(b1 - b2, 2));
     }
 
     function getContrastingColor(hostColor, guestColor) {
-      // 若顏色距離大於 120 (足夠容易辨識)，則保留 Guest 的選擇
       if (getColorDistance(hostColor, guestColor) >= 120) return guestColor;
-      
-      // 若太接近，從 niceColors 中找一個與 Host 對比度最大的顏色
       let bestColor = guestColor;
       let maxDist = 0;
       for (let c of niceColors) {
         let d = getColorDistance(hostColor, c);
-        if (d > maxDist) { 
-          maxDist = d; 
-          bestColor = c; 
-        }
+        if (d > maxDist) { maxDist = d; bestColor = c; }
       }
       return bestColor;
     }
-    // ---------------------------------
 
     function updateMineConstraints() {
       const n = parseInt(mapSizeInput.value);
@@ -458,16 +815,8 @@
     let gameActive = false;
     let myRoomId = null;
 
-    let players = {
-      A: { name: 'Player A', color: '#3b82f6' },
-      B: { name: 'Player B', color: '#ef4444' }
-    };
-
-    let engine = { 
-      size: 12, minesCount: 39, mines: [], numbers: [], revealed: [], owners: [], 
-      scoreA: 0, scoreB: 0, turn: 'A', 
-      timeMode: 'standard', timeA: 60, timeB: 60, lastMove: null
-    };
+    let players = { A: { name: 'Player A', color: '#3b82f6' }, B: { name: 'Player B', color: '#ef4444' } };
+    let engine = { size: 12, minesCount: 39, mines: [], numbers: [], revealed: [], owners: [], scoreA: 0, scoreB: 0, turn: 'A', timeMode: 'standard', timeA: 60, timeB: 60, lastMove: null };
     let clientView = null;
     let timerInterval = null;
 
@@ -546,7 +895,6 @@
     }, 5000);
 
     function startBroadcastingLobby() {
-      // 在 payload 裡面加入 timeMode: engine.timeMode
       const payload = { action: 'add', id: myRoomId, hostName: myNameInput.value || "Host", size: engine.size, mines: engine.minesCount, timeMode: engine.timeMode };
       mqttClient.publish(lobbyTopic, JSON.stringify(payload));
       broadcastInterval = setInterval(() => { mqttClient.publish(lobbyTopic, JSON.stringify(payload)); }, 4000);
@@ -557,9 +905,7 @@
       if (myRoomId) mqttClient.publish(lobbyTopic, JSON.stringify({ action: 'remove', id: myRoomId }));
     }
 
-    window.addEventListener('beforeunload', () => {
-      stopBroadcastingLobby();
-    });
+    window.addEventListener('beforeunload', () => { stopBroadcastingLobby(); });
 
     function escapeHTML(str) {
       if (!str) return "";
@@ -580,13 +926,7 @@
         return;
       }
       
-      // 建立時間模式的中文對照表
-      const timeModeMap = {
-        'fast': '⚡ 快速',
-        'standard': '⏳ 標準',
-        'slow': '🐢 慢速',
-        'unlimited': '⏱️ 不限時'
-      };
+      const timeModeMap = { 'fast': '⚡ 快速', 'standard': '⏳ 標準', 'slow': '🐢 慢速' };
 
       roomIds.forEach(id => {
         const room = activeRooms[id];
@@ -597,11 +937,8 @@
         const safeSize = parseInt(room.size) || 12; 
         const safeMines = parseInt(room.mines) || 39; 
         const safeId = escapeHTML(String(room.id)).replace(/'/g, ""); 
-        
-        // 取得安全的時間模式字串（預設為標準）
         const safeTimeMode = timeModeMap[room.timeMode] || '⏳ 標準';
 
-        // 在 HTML 中加入 safeTimeMode
         card.innerHTML = `
           <div class="room-info">🎮 ${safeHostName} 的房間</div>
           <div class="room-settings">📐 ${safeSize}x${safeSize} | 💣 ${safeMines} 顆 | ${safeTimeMode}</div>
@@ -618,17 +955,17 @@
     }
 
     function tickTime() {
-      if (!gameActive || !isHost) return;
-      if (engine.timeMode !== 'unlimited') {
-        engine['time' + engine.turn]--;
-        if (engine['time' + engine.turn] <= 0) {
-           gameActive = false;
-           if(timerInterval) clearInterval(timerInterval);
-           const winner = engine.turn === 'A' ? 'B' : 'A';
-           if(conn) conn.send({ type: 'GAME_OVER', winner, reason: 'timeout' });
-           showVictory(winner, 'timeout');
-        }
-      } else { engine['time' + engine.turn]++; }
+      if (!gameActive || !isHost || engine.timeMode === 'none') return; // 練習模式完全關閉時間計算
+      
+      engine['time' + engine.turn]--;
+      if (engine['time' + engine.turn] <= 0) {
+          gameActive = false;
+          if(timerInterval) clearInterval(timerInterval);
+          const winner = engine.turn === 'A' ? 'B' : 'A';
+          if(conn) conn.send({ type: 'GAME_OVER', winner, reason: 'timeout' });
+          showVictory(winner, 'timeout');
+      }
+      
       updateHUD(engine.turn);
       if(conn) conn.send({ type: 'TIME_SYNC', timeA: engine.timeA, timeB: engine.timeB });
     }
@@ -660,9 +997,7 @@
 
         lastHeartbeatTime = Date.now();
         heartbeatInterval = setInterval(() => {
-          if (conn && conn.open) {
-            conn.send({ type: 'PING' });
-          }
+          if (conn && conn.open) conn.send({ type: 'PING' });
         }, HEARTBEAT_INTERVAL_MS);
 
         heartbeatCheckInterval = setInterval(() => {
@@ -671,7 +1006,6 @@
             clearInterval(heartbeatCheckInterval);
             return;
           }
-
           if (Date.now() - lastHeartbeatTime > HEARTBEAT_TIMEOUT_MS) {
             clearInterval(heartbeatInterval);
             clearInterval(heartbeatCheckInterval);
@@ -698,20 +1032,16 @@
 
       if (data.type === 'PROFILE') {
         if (isHost) {
-          // 房主接收 Guest 顏色，並套用防撞算法
           let finalGuestColor = getContrastingColor(players.A.color, data.color);
           players.B = { name: data.name, color: finalGuestColor };
-          
-          // 房主回傳自己的 PROFILE，同時把覆寫後的顏色 (overrideColor) 傳給 Guest
           conn.send({ type: 'PROFILE', name: players.A.name, color: players.A.color, overrideColor: finalGuestColor });
           setTimeout(() => { startGameEngine(); }, 300);
         } else { 
           players.A = { name: data.name, color: data.color }; 
-          // Guest 收到房主的 PROFILE，若房主有發送強制覆寫顏色，則更新本機顏色
           if (data.overrideColor) {
             players.B.color = data.overrideColor;
-            myColorInput.value = data.overrideColor; // 更新介面調色盤
-            localStorage.setItem('mineDuelColor', data.overrideColor); // 儲存新顏色到本機
+            myColorInput.value = data.overrideColor; 
+            localStorage.setItem('mineDuelColor', data.overrideColor); 
           }
         }
         updateHUD();
@@ -747,21 +1077,12 @@
 
     btnCancel.addEventListener('click', () => {
       stopBroadcastingLobby();
-      if (peer) {
-        peer.destroy();
-        peer = null;
-      }
-      if (conn) {
-        conn.close();
-        conn = null;
-      }
-      clearInterval(heartbeatInterval);
-      clearInterval(heartbeatCheckInterval);
+      if (peer) { peer.destroy(); peer = null; }
+      if (conn) { conn.close(); conn = null; }
+      clearInterval(heartbeatInterval); clearInterval(heartbeatCheckInterval);
       isHost = false;
-      btnCreate.style.display = 'block';
-      btnCreate.disabled = false;
-      btnCancel.style.display = 'none';
-      statusText.innerText = "準備就緒";
+      btnCreate.style.display = 'block'; btnCreate.disabled = false;
+      btnCancel.style.display = 'none'; statusText.innerText = "準備就緒";
       privateCodeDisplay.style.display = 'none';
       renderRoomList();
     });
@@ -774,8 +1095,7 @@
 
     btnCreate.addEventListener('click', () => {
       if (audioCtx.state === 'suspended') audioCtx.resume(); 
-      
-      isHost = true;
+      isHost = true; isPracticeMode = false;
       players.A = { name: myNameInput.value || "Host", color: myColorInput.value };
       engine.size = parseInt(document.getElementById('mapSize').value);
       engine.minesCount = parseInt(document.getElementById('mineCount').value);
@@ -784,8 +1104,7 @@
       const isPrivate = document.getElementById('roomPrivacy').value === 'private';
       myRoomId = isPrivate ? generateUniqueCode() : Math.random().toString(36).substring(2, 10).toUpperCase();
 
-      btnCreate.style.display = 'none'; 
-      btnCancel.style.display = 'block'; 
+      btnCreate.style.display = 'none'; btnCancel.style.display = 'block'; 
       statusText.innerText = "建立房間中...";
 
       peer = new Peer(myRoomId);
@@ -810,10 +1129,9 @@
 
     window.joinGame = function(targetId) {
       if (audioCtx.state === 'suspended') audioCtx.resume(); 
-      isHost = false;
+      isHost = false; isPracticeMode = false;
       players.B = { name: myNameInput.value || "Guest", color: myColorInput.value };
-      btnCreate.disabled = true;
-      statusText.innerText = "連線中...";
+      btnCreate.disabled = true; statusText.innerText = "連線中...";
       
       peer = new Peer();
       peer.on('open', () => {
@@ -833,10 +1151,9 @@
       if (engine.timeMode === 'fast') baseTime = 20;
       else if (engine.timeMode === 'standard') baseTime = 60;
       else if (engine.timeMode === 'slow') baseTime = 120;
+      // 若為 none 則為 0，但在 tickTime 裡會被阻擋，不用擔心
       
-      engine.timeA = baseTime;
-      engine.timeB = baseTime;
-      
+      engine.timeA = baseTime; engine.timeB = baseTime;
       comboCount = 0; comboPlayer = null; 
 
       engine.turn = Math.random() < 0.5 ? 'A' : 'B';
@@ -865,14 +1182,17 @@
       }
       
       if (timerInterval) clearInterval(timerInterval);
-      timerInterval = setInterval(tickTime, 1000);
+      if (engine.timeMode !== 'none') {
+        timerInterval = setInterval(tickTime, 1000);
+      }
+
+      if (isPracticeMode && isAIToggledOn) calculateAIProbabilities();
 
       updateHUD(engine.turn); drawBoard(); syncToGuest(); hideOverlay();
     }
 
     function processClick(x, y, playerRole) {
       if (!gameActive || engine.turn !== playerRole) return;
-      
       if (typeof x !== 'number' || typeof y !== 'number') return;
       if (x < 0 || x >= engine.size || y < 0 || y >= engine.size) return;
 
@@ -915,6 +1235,12 @@
         
         engine.turn = (playerRole === 'A') ? 'B' : 'A';
       }
+
+      // 只有在開啟狀態下才重新計算，完全節省 CPU
+      if (isPracticeMode && isAIToggledOn && gameActive) {
+        calculateAIProbabilities();
+      }
+
       updateHUD(engine.turn); drawBoard(); syncToGuest();
     }
 
@@ -965,7 +1291,10 @@
       const x = Math.floor((e.clientX - rect.left) / (rect.width / BOARD_PIXEL) / cellSize);
       const y = Math.floor((e.clientY - rect.top) / (rect.height / BOARD_PIXEL) / cellSize);
 
-      if (isHost) {
+      // 本機練習模式下，不論誰的回合都可以直接點擊，實現熱座雙人對戰
+      if (isPracticeMode) {
+        processClick(x, y, engine.turn);
+      } else if (isHost) {
         if (engine.turn === 'A') processClick(x, y, 'A');
       } else {
         if (clientView && clientView.turn === 'B') conn.send({ type: 'CLICK', x, y });
@@ -986,7 +1315,7 @@
       ctx.closePath();
     }
 
-    function drawBoard() {
+       function drawBoard() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       const grid = isHost ? engine.size : (clientView ? clientView.size : 12);
       if (!grid) return;
@@ -1023,24 +1352,78 @@
           const radius = Math.max(3, cw * 0.15); 
 
           if (!rev) {
-            const grad = ctx.createLinearGradient(cx, cy, cx, cy + ch);
-            grad.addColorStop(0, 'rgba(255, 255, 255, 0.85)');
-            grad.addColorStop(1, 'rgba(255, 255, 255, 0.3)');
-            ctx.fillStyle = grad;
-            drawRoundedRect(ctx, cx, cy, cw, ch, radius);
-            ctx.fill();
+            // 繪製 AI 機率 (純白背景 + 勝率動態顏色與字體大小)
+            if (isPracticeMode && isAIToggledOn && aiProbabilities[idx] !== null && gameActive) {
+              // 1. 純白背景與極簡邊框
+              ctx.fillStyle = '#ffffff';
+              drawRoundedRect(ctx, cx, cy, cw, ch, radius);
+              ctx.fill();
 
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
-            ctx.lineWidth = 1.5;
-            drawRoundedRect(ctx, cx + 1, cy + 1, cw - 2, ch - 2, radius);
-            ctx.stroke();
+              ctx.strokeStyle = 'rgba(0, 0, 0, 0.15)';
+              ctx.lineWidth = 1;
+              drawRoundedRect(ctx, cx, cy, cw, ch, radius);
+              ctx.stroke();
 
-            ctx.strokeStyle = 'rgba(0, 0, 0, 0.08)';
-            ctx.lineWidth = 1;
-            drawRoundedRect(ctx, cx, cy, cw, ch, radius);
-            ctx.stroke();
+              // 2. 機率與顏色、大小邏輯
+              let prob = aiProbabilities[idx];
+              let percentVal = Math.round(prob * 100);
+              let textColor = '';
+
+              // --- 顏色深淺處理 (已修正方向) ---
+              if (percentVal < 50) {
+                // 小於 50%：黑色。勝率越大 (接近49) 越黑，勝率越小 (接近0) 越淺
+                // 讓 0% 透明度為 0.3，49% 透明度接近 1.0
+                let alpha = 0.3 + (percentVal / 50) * 0.7;
+                textColor = `rgba(0, 0, 0, ${alpha})`;
+              } else if (percentVal === 50) {
+                // 等於 50%：橙色
+                textColor = '#ff9800'; 
+              } else {
+                // 大於 50%：紅色。勝率越大 (接近100) 越紅，越小 (接近51) 越淡
+                let alpha = percentVal / 100;
+                alpha = Math.max(0.3, alpha); // 最低保留 0.3 透明度
+                textColor = `rgba(255, 0, 0, ${alpha})`;
+              }
+
+              // --- 字體大小線性處理 ---
+              // 基礎字體大小：格子高度的 40%
+              let baseFontSize = ch * 0.40; 
+              // 線性縮放比例：0% -> 0.3倍，100% -> 1.5倍
+              let fontScale = 0.3 + (prob * 1.2); 
+              let finalFontSize = baseFontSize * fontScale;
+
+              // 3. 渲染數值文字
+              ctx.fillStyle = textColor;
+              ctx.font = `bold ${finalFontSize}px Arial`;
+              ctx.textAlign = 'center'; 
+              ctx.textBaseline = 'middle';
+              ctx.shadowBlur = 0; 
+              
+              // Y 座標微調，確保不同大小的字體都能保持視覺置中
+              ctx.fillText(`${percentVal}`, cx + cw/2, cy + ch/2 + (finalFontSize * 0.05));
+
+            } else {
+              // 正常遊戲狀態 (未開啟 AI 或無資料時)：原本的玻璃質感漸層
+              const grad = ctx.createLinearGradient(cx, cy, cx, cy + ch);
+              grad.addColorStop(0, 'rgba(255, 255, 255, 0.85)');
+              grad.addColorStop(1, 'rgba(255, 255, 255, 0.3)');
+              ctx.fillStyle = grad;
+              drawRoundedRect(ctx, cx, cy, cw, ch, radius);
+              ctx.fill();
+
+              ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+              ctx.lineWidth = 1.5;
+              drawRoundedRect(ctx, cx + 1, cy + 1, cw - 2, ch - 2, radius);
+              ctx.stroke();
+
+              ctx.strokeStyle = 'rgba(0, 0, 0, 0.08)';
+              ctx.lineWidth = 1;
+              drawRoundedRect(ctx, cx, cy, cw, ch, radius);
+              ctx.stroke();
+            }
 
           } else {
+            // 已翻開格子的繪製
             ctx.fillStyle = 'rgba(255, 255, 255, 0.1)'; 
             drawRoundedRect(ctx, cx, cy, cw, ch, radius);
             ctx.fill();
@@ -1081,6 +1464,7 @@
             }
           }
 
+          // 最後一手的特殊標記
           if (isLastMove) {
             ctx.save();
             const pColor = (lastP === 'A') ? players.A.color : players.B.color;
@@ -1102,7 +1486,6 @@
         { txt: document.getElementById('timeA'), box: document.getElementById('timeA')?.parentElement, maxFontSize: 30 },
         { txt: document.getElementById('nameB'), box: document.getElementById('nameB')?.parentElement, maxFontSize: 42 },
         { txt: document.getElementById('timeB'), box: document.getElementById('timeB')?.parentElement, maxFontSize: 30 },
-        // 讓比分也能完美自動縮放
         { txt: document.getElementById('scoreLargeText'), box: document.getElementById('scoreLargeText')?.parentElement, maxFontSize: 50 }
       ];
 
@@ -1144,8 +1527,14 @@
       document.getElementById('nameB').innerText = players.B.name;
       document.getElementById('nameB').style.color = players.B.color;
       
-      document.getElementById('timeA').innerText = formatTime(engine.timeA);
-      document.getElementById('timeB').innerText = formatTime(engine.timeB);
+      // 若為練習模式，顯示固定文字
+      if (engine.timeMode === 'none') {
+        document.getElementById('timeA').innerText = '🛠️ 練習';
+        document.getElementById('timeB').innerText = '🛠️ 練習';
+      } else {
+        document.getElementById('timeA').innerText = formatTime(engine.timeA);
+        document.getElementById('timeB').innerText = formatTime(engine.timeB);
+      }
 
       const scoreAV = players.A.score !== undefined ? players.A.score : (isHost ? engine.scoreA : 0);
       const scoreBV = players.B.score !== undefined ? players.B.score : (isHost ? engine.scoreB : 0);
@@ -1180,7 +1569,7 @@
           container.style.setProperty('--turn-color', players.B.color);
         }
 
-        if (engine.timeMode !== 'unlimited') {
+        if (engine.timeMode !== 'unlimited' && engine.timeMode !== 'none') {
           const currentRemaining = turn === 'A' ? engine.timeA : engine.timeB;
           if (currentRemaining <= 10) {
             container.classList.add('urgent');
