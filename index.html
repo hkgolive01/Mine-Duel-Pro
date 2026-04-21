@@ -215,7 +215,6 @@
       <input type="range" id="mineCount" min="3" max="101" value="29">
       
       <button id="btnCreate" class="btn-action">建立並等待對手</button>
-      <!-- 新增：取消按鈕 (預設隱藏) -->
       <button id="btnCancel" class="btn-danger" style="display:none;">取消等待</button>
       
       <div id="status">準備就緒</div>
@@ -343,7 +342,6 @@
     let clientView = null;
     let timerInterval = null;
 
-    // 心跳機制變數
     let lastHeartbeatTime = Date.now();
     let heartbeatInterval = null;
     let heartbeatCheckInterval = null;
@@ -399,8 +397,8 @@
         if (data.action === 'add') {
           if (data.id === myRoomId) return; 
           
-          // 【修補：大廳假房間洗版】如果房間數 >= 50 且為新房間，則忽略以防當機
-          if (!activeRooms[data.id] && Object.keys(activeRooms).length >= 50) return;
+          // 修補 C：大廳假房間洗版限制。限制活躍房間數量，避免記憶體與效能耗盡
+          if (Object.keys(activeRooms).length >= 50 && !activeRooms[data.id]) return;
           
           activeRooms[data.id] = data;
           activeRooms[data.id].lastSeen = Date.now();
@@ -432,12 +430,10 @@
       if (myRoomId) mqttClient.publish(lobbyTopic, JSON.stringify({ action: 'remove', id: myRoomId }));
     }
 
-    // 優化：關閉網頁前主動移除房間廣播
     window.addEventListener('beforeunload', () => {
       stopBroadcastingLobby();
     });
 
-    // XSS 防護處理函數
     function escapeHTML(str) {
       if (!str) return "";
       return String(str).replace(/[&<>'"]/g, tag => ({
@@ -461,12 +457,12 @@
         const card = document.createElement('div');
         card.className = 'room-card';
         
-        // 【修補：大廳 XSS 攻擊】全面過濾所有可能被注入的資料，防止惡意彈窗與代碼注入
-        const safeHostName = escapeHTML(room.hostName);
-        const safeSize = parseInt(room.size) || 12;
-        const safeMines = parseInt(room.mines) || 20;
-        const safeId = escapeHTML(room.id);
-        
+        // 修補 B：完整防堵 XSS。將所有外部參數過濾，避免惡意代碼注入
+        const safeHostName = escapeHTML(String(room.hostName));
+        const safeSize = parseInt(room.size) || 12; // 強轉整數
+        const safeMines = parseInt(room.mines) || 29; // 強轉整數
+        const safeId = escapeHTML(String(room.id)).replace(/'/g, ""); // 清理單引號避免跳脫
+
         card.innerHTML = `
           <div class="room-info">🎮 ${safeHostName} 的房間</div>
           <div class="room-settings">📐 ${safeSize}x${safeSize} | 💣 ${safeMines} 顆</div>
@@ -488,7 +484,7 @@
         engine['time' + engine.turn]--;
         if (engine['time' + engine.turn] <= 0) {
            gameActive = false;
-           if(timerInterval) clearInterval(timerInterval); // 防洩漏
+           if(timerInterval) clearInterval(timerInterval);
            const winner = engine.turn === 'A' ? 'B' : 'A';
            if(conn) conn.send({ type: 'GAME_OVER', winner, reason: 'timeout' });
            showVictory(winner, 'timeout');
@@ -520,7 +516,7 @@
           statusText.innerText = "連線成功！";
           stopBroadcastingLobby();
           privateCodeDisplay.style.display = 'none';
-          btnCancel.style.display = 'none'; // 連線成功後隱藏取消按鈕
+          btnCancel.style.display = 'none'; 
         }
 
         lastHeartbeatTime = Date.now();
@@ -531,7 +527,6 @@
         }, HEARTBEAT_INTERVAL_MS);
 
         heartbeatCheckInterval = setInterval(() => {
-          // 優化：如果遊戲已經結束 (分數大於0且非 active)，就不再判定斷線
           if (!gameActive && (engine.scoreA > 0 || engine.scoreB > 0)) {
             clearInterval(heartbeatInterval);
             clearInterval(heartbeatCheckInterval);
@@ -552,10 +547,7 @@
       conn.on('close', () => { 
         clearInterval(heartbeatInterval);
         clearInterval(heartbeatCheckInterval);
-        
-        // 優化：只有在遊戲還沒結束的情況下才警告並重整
         if (!gameActive && (engine.scoreA > 0 || engine.scoreB > 0)) return; 
-        
         alert("對方已斷開連線！"); 
         location.reload(); 
       });
@@ -597,12 +589,11 @@
       }
       else if (data.type === 'GAME_OVER') {
         gameActive = false; 
-        if(timerInterval) clearInterval(timerInterval); // 防洩漏
+        if(timerInterval) clearInterval(timerInterval); 
         showVictory(data.winner, data.reason);
       }
     }
 
-    // 取消房間按鈕需徹底清理所有連線及定時器
     btnCancel.addEventListener('click', () => {
       stopBroadcastingLobby();
       if (peer) {
@@ -624,7 +615,6 @@
       renderRoomList();
     });
 
-    // 產生結合時間戳與亂數的 6 位高唯一性專屬代碼
     const generateUniqueCode = () => {
       const timePart = Date.now().toString(36).slice(-3);
       const randPart = Math.random().toString(36).substring(2, 5);
@@ -632,7 +622,7 @@
     };
 
     btnCreate.addEventListener('click', () => {
-      if (audioCtx.state === 'suspended') audioCtx.resume(); // 預先喚醒 AudioContext
+      if (audioCtx.state === 'suspended') audioCtx.resume(); 
       
       isHost = true;
       players.A = { name: myNameInput.value || "Host", color: myColorInput.value };
@@ -641,11 +631,10 @@
       engine.timeMode = document.getElementById('timeMode').value;
       
       const isPrivate = document.getElementById('roomPrivacy').value === 'private';
-      // 替換原本的 Math.floor(100000 + Math.random() * 900000)
       myRoomId = isPrivate ? generateUniqueCode() : Math.random().toString(36).substring(2, 10).toUpperCase();
 
-      btnCreate.style.display = 'none'; // 隱藏建立按鈕
-      btnCancel.style.display = 'block'; // 顯示取消按鈕
+      btnCreate.style.display = 'none'; 
+      btnCancel.style.display = 'block'; 
       statusText.innerText = "建立房間中...";
 
       peer = new Peer(myRoomId);
@@ -662,14 +651,14 @@
     });
 
     document.getElementById('btnManualJoin').addEventListener('click', () => {
-      if (audioCtx.state === 'suspended') audioCtx.resume(); // 預先喚醒 AudioContext
+      if (audioCtx.state === 'suspended') audioCtx.resume(); 
       const code = document.getElementById('manualJoinCode').value.toUpperCase().trim();
       if (!code) return alert('請輸入房間代碼');
       joinGame(code);
     });
 
     window.joinGame = function(targetId) {
-      if (audioCtx.state === 'suspended') audioCtx.resume(); // 預先喚醒 AudioContext
+      if (audioCtx.state === 'suspended') audioCtx.resume(); 
       isHost = false;
       players.B = { name: myNameInput.value || "Guest", color: myColorInput.value };
       btnCreate.disabled = true;
@@ -726,9 +715,10 @@
     function processClick(x, y, playerRole) {
       if (!gameActive || engine.turn !== playerRole) return;
       
-      // 【修補：防止座標越界導致當機】如果是無效的 x 或 y 點擊，直接略過
+      // 修補 D：座標越界檢查，防止建立超大陣列導致記憶體溢出 (OOM) 或遊戲崩潰
+      if (typeof x !== 'number' || typeof y !== 'number') return;
       if (x < 0 || x >= engine.size || y < 0 || y >= engine.size) return;
-      
+
       const idx = y * engine.size + x;
       if (engine.revealed[idx]) return;
 
@@ -747,7 +737,7 @@
         const winThreshold = Math.ceil(engine.minesCount / 2);
         if (engine.scoreA >= winThreshold || engine.scoreB >= winThreshold) {
           gameActive = false;
-          if(timerInterval) clearInterval(timerInterval); // 防洩漏
+          if(timerInterval) clearInterval(timerInterval); 
           const winner = engine.scoreA > engine.scoreB ? 'A' : 'B';
           if(conn) conn.send({ type: 'GAME_OVER', winner, reason: 'score' });
           showVictory(winner, 'score');
