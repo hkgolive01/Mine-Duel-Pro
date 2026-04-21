@@ -48,7 +48,6 @@
       text-shadow: 0 2px 10px rgba(59, 130, 246, 0.2);
     }
 
-    /* 重新整理按鈕樣式 */
     .btn-refresh {
       position: absolute; right: 0; top: 50%; transform: translateY(-50%);
       width: 36px; height: 36px; padding: 0; margin: 0;
@@ -75,7 +74,7 @@
       justify-content: center; height: auto; min-height: unset; 
       padding: 10px 20px; background: transparent; border: none; box-shadow: none;
     }
-    body.game-on .sidebar-header .btn-refresh { display: none; /* 遊戲進行中隱藏重新整理，以免誤觸 */ }
+    body.game-on .sidebar-header .btn-refresh { display: none; }
     body.game-on #sidebar h1 { font-size: 32px; letter-spacing: 2px; }
 
     .player-setup { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
@@ -131,7 +130,7 @@
     .player-time { font-family: monospace; font-weight: bold; color: #334155; background: rgba(255,255,255,0.7); padding: 4px 12px; border-radius: 10px; box-shadow: inset 0 1px 3px rgba(0,0,0,0.05); white-space: nowrap; display: inline-block; }
 
     .score-small-top { font-size: 14px; font-weight: bold; color: #475569; letter-spacing: 1px; background: rgba(226, 232, 240, 0.6); padding: 2px 8px; border-radius: 6px; white-space: nowrap;}
-    .score-large { display: flex; align-items: center; font-weight: 900; font-family: monospace; letter-spacing: 2px; white-space: nowrap; }
+    .score-large { display: flex; align-items: center; font-weight: 900; font-family: monospace; letter-spacing: 2px; white-space: nowrap; font-size: 36px; /* 固定比分大小解決消失問題 */}
     .score-small-bottom { font-size: 14px; font-weight: bold; white-space: nowrap;}
     .score-main-row { width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; }
     
@@ -194,7 +193,6 @@
       body:not(.game-on) #sidebar { 
         width: 100%; height: 100vh; max-height: none; border-right: none; border-bottom: none; 
         flex-direction: column; justify-content: flex-start;
-        /* 加入 env(safe-area-inset-bottom) 抵消 iOS 黑條，並加大底部留白確保滑動到底可看見所有內容 */
         padding-bottom: calc(120px + env(safe-area-inset-bottom)); 
       }
       body:not(.game-on) .panel { width: 100%; box-sizing: border-box; flex: none; }
@@ -207,7 +205,6 @@
       
       body.game-on #main-area { 
         display: flex !important; flex: 1; padding: 10px; 
-        /* 遊戲畫面底部也增加安全區域距離 */
         padding-bottom: calc(20px + env(safe-area-inset-bottom));
       }
       
@@ -239,7 +236,7 @@
     <div class="panel">
       <h3>1. 玩家設定</h3>
       <div class="player-setup">
-        <input type="color" id="myColor" value="#3b82f6" title="點擊更換顏色">
+        <input type="color" id="myColor" title="點擊更換顏色">
         <input type="text" id="myName" value="Player" placeholder="輸入名稱">
       </div>
       <label class="checkbox-label">
@@ -256,7 +253,9 @@
       </select>
       <label>時間模式</label>
       <select id="timeMode">
-        <option value="standard">⏳ 標準 (60秒 + 3秒/步)</option>
+        <option value="fast">⚡ 快速 (20秒 + 2秒/步)</option>
+        <option value="standard" selected>⏳ 標準 (60秒 + 3秒/步)</option>
+        <option value="slow">🐢 慢速 (120秒 + 4秒/步)</option>
         <option value="unlimited">⏱️ 不限時 (僅記錄時間)</option>
       </select>
       
@@ -344,7 +343,60 @@
     const btnCancel = document.getElementById('btnCancel');
 
     const niceColors = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6', '#f43f5e', '#ea580c', '#06b6d4'];
-    myColorInput.value = niceColors[Math.floor(Math.random() * niceColors.length)];
+    
+    // 1. 網頁載入時，嘗試從 localStorage 讀取玩家名稱與顏色
+    const savedName = localStorage.getItem('mineDuelName');
+    const savedColor = localStorage.getItem('mineDuelColor');
+
+    if (savedName) {
+      myNameInput.value = savedName; // 若有儲存名稱，則套用
+    }
+    if (savedColor) {
+      myColorInput.value = savedColor; // 若有儲存顏色，則套用
+    } else {
+      // 若無儲存顏色，則隨機產生一個並寫入 input
+      myColorInput.value = niceColors[Math.floor(Math.random() * niceColors.length)];
+    }
+
+    // 2. 當玩家更改名稱或顏色時，即時儲存到 localStorage
+    myNameInput.addEventListener('input', (e) => {
+      localStorage.setItem('mineDuelName', e.target.value);
+    });
+
+    myColorInput.addEventListener('input', (e) => {
+      localStorage.setItem('mineDuelColor', e.target.value);
+    });
+
+    // --- 顏色防撞算法 Helper 函數 ---
+    function hexToRgb(hex) {
+      const bigint = parseInt(hex.replace('#',''), 16);
+      return [(bigint >> 16) & 255, (bigint >> 8) & 255, bigint & 255];
+    }
+
+    function getColorDistance(hex1, hex2) {
+      const [r1, g1, b1] = hexToRgb(hex1);
+      const [r2, g2, b2] = hexToRgb(hex2);
+      // 計算三維 RGB 空間的歐幾里得距離
+      return Math.sqrt(Math.pow(r1 - r2, 2) + Math.pow(g1 - g2, 2) + Math.pow(b1 - b2, 2));
+    }
+
+    function getContrastingColor(hostColor, guestColor) {
+      // 若顏色距離大於 120 (足夠容易辨識)，則保留 Guest 的選擇
+      if (getColorDistance(hostColor, guestColor) >= 120) return guestColor;
+      
+      // 若太接近，從 niceColors 中找一個與 Host 對比度最大的顏色
+      let bestColor = guestColor;
+      let maxDist = 0;
+      for (let c of niceColors) {
+        let d = getColorDistance(hostColor, c);
+        if (d > maxDist) { 
+          maxDist = d; 
+          bestColor = c; 
+        }
+      }
+      return bestColor;
+    }
+    // ---------------------------------
 
     function updateMineConstraints() {
       const n = parseInt(mapSizeInput.value);
@@ -469,7 +521,8 @@
     }, 5000);
 
     function startBroadcastingLobby() {
-      const payload = { action: 'add', id: myRoomId, hostName: myNameInput.value || "Host", size: engine.size, mines: engine.minesCount };
+      // 在 payload 裡面加入 timeMode: engine.timeMode
+      const payload = { action: 'add', id: myRoomId, hostName: myNameInput.value || "Host", size: engine.size, mines: engine.minesCount, timeMode: engine.timeMode };
       mqttClient.publish(lobbyTopic, JSON.stringify(payload));
       broadcastInterval = setInterval(() => { mqttClient.publish(lobbyTopic, JSON.stringify(payload)); }, 4000);
     }
@@ -501,6 +554,15 @@
         roomListContainer.innerHTML = '<p style="font-size:13px; color:#94a3b8; text-align:center;">目前沒有公開房間</p>';
         return;
       }
+      
+      // 建立時間模式的中文對照表
+      const timeModeMap = {
+        'fast': '⚡ 快速',
+        'standard': '⏳ 標準',
+        'slow': '🐢 慢速',
+        'unlimited': '⏱️ 不限時'
+      };
+
       roomIds.forEach(id => {
         const room = activeRooms[id];
         const card = document.createElement('div');
@@ -510,10 +572,14 @@
         const safeSize = parseInt(room.size) || 12; 
         const safeMines = parseInt(room.mines) || 39; 
         const safeId = escapeHTML(String(room.id)).replace(/'/g, ""); 
+        
+        // 取得安全的時間模式字串（預設為標準）
+        const safeTimeMode = timeModeMap[room.timeMode] || '⏳ 標準';
 
+        // 在 HTML 中加入 safeTimeMode
         card.innerHTML = `
           <div class="room-info">🎮 ${safeHostName} 的房間</div>
-          <div class="room-settings">📐 ${safeSize}x${safeSize} | 💣 ${safeMines} 顆</div>
+          <div class="room-settings">📐 ${safeSize}x${safeSize} | 💣 ${safeMines} 顆 | ${safeTimeMode}</div>
           <button class="btn-join-room" onclick="joinGame('${safeId}')">加入對戰</button>
         `;
         roomListContainer.appendChild(card);
@@ -528,7 +594,7 @@
 
     function tickTime() {
       if (!gameActive || !isHost) return;
-      if (engine.timeMode === 'standard') {
+      if (engine.timeMode !== 'unlimited') {
         engine['time' + engine.turn]--;
         if (engine['time' + engine.turn] <= 0) {
            gameActive = false;
@@ -607,10 +673,22 @@
 
       if (data.type === 'PROFILE') {
         if (isHost) {
-          players.B = { name: data.name, color: data.color };
-          conn.send({ type: 'PROFILE', name: players.A.name, color: players.A.color });
+          // 房主接收 Guest 顏色，並套用防撞算法
+          let finalGuestColor = getContrastingColor(players.A.color, data.color);
+          players.B = { name: data.name, color: finalGuestColor };
+          
+          // 房主回傳自己的 PROFILE，同時把覆寫後的顏色 (overrideColor) 傳給 Guest
+          conn.send({ type: 'PROFILE', name: players.A.name, color: players.A.color, overrideColor: finalGuestColor });
           setTimeout(() => { startGameEngine(); }, 300);
-        } else { players.A = { name: data.name, color: data.color }; }
+        } else { 
+          players.A = { name: data.name, color: data.color }; 
+          // Guest 收到房主的 PROFILE，若房主有發送強制覆寫顏色，則更新本機顏色
+          if (data.overrideColor) {
+            players.B.color = data.overrideColor;
+            myColorInput.value = data.overrideColor; // 更新介面調色盤
+            localStorage.setItem('mineDuelColor', data.overrideColor); // 儲存新顏色到本機
+          }
+        }
         updateHUD();
       } 
       else if (data.type === 'GAME_SYNC') {
@@ -725,8 +803,14 @@
       engine.mines = Array(total).fill(false); engine.numbers = Array(total).fill(0);
       engine.revealed = Array(total).fill(false); engine.owners = Array(total).fill(null);
       engine.scoreA = 0; engine.scoreB = 0;
-      engine.timeA = engine.timeMode === 'standard' ? 60 : 0;
-      engine.timeB = engine.timeMode === 'standard' ? 60 : 0;
+
+      let baseTime = 0;
+      if (engine.timeMode === 'fast') baseTime = 20;
+      else if (engine.timeMode === 'standard') baseTime = 60;
+      else if (engine.timeMode === 'slow') baseTime = 120;
+      
+      engine.timeA = baseTime;
+      engine.timeB = baseTime;
       
       comboCount = 0; comboPlayer = null; 
 
@@ -776,7 +860,10 @@
       if (engine.mines[idx]) {
         engine.owners[idx] = playerRole;
         if (playerRole === 'A') engine.scoreA++; else engine.scoreB++;
-        if (engine.timeMode === 'standard') engine['time' + playerRole] += 3;
+        
+        if (engine.timeMode === 'fast') engine['time' + playerRole] += 2;
+        else if (engine.timeMode === 'standard') engine['time' + playerRole] += 3;
+        else if (engine.timeMode === 'slow') engine['time' + playerRole] += 4;
 
         if(comboPlayer === playerRole) { comboCount++; } 
         else { comboPlayer = playerRole; comboCount = 1; }
@@ -797,7 +884,10 @@
         comboCount = 0; 
         triggerSound('safe');
 
-        if (engine.timeMode === 'standard') engine['time' + playerRole] += 3;
+        if (engine.timeMode === 'fast') engine['time' + playerRole] += 2;
+        else if (engine.timeMode === 'standard') engine['time' + playerRole] += 3;
+        else if (engine.timeMode === 'slow') engine['time' + playerRole] += 4;
+        
         engine.turn = (playerRole === 'A') ? 'B' : 'A';
       }
       updateHUD(engine.turn); drawBoard(); syncToGuest();
@@ -986,8 +1076,8 @@
         { txt: document.getElementById('nameA'), box: document.getElementById('nameA')?.parentElement, maxFontSize: 42 },
         { txt: document.getElementById('timeA'), box: document.getElementById('timeA')?.parentElement, maxFontSize: 30 },
         { txt: document.getElementById('nameB'), box: document.getElementById('nameB')?.parentElement, maxFontSize: 42 },
-        { txt: document.getElementById('timeB'), box: document.getElementById('timeB')?.parentElement, maxFontSize: 30 },
-        { txt: document.getElementById('scoreLargeText'), box: document.getElementById('scoreLargeText')?.parentElement, maxFontSize: 60 }
+        { txt: document.getElementById('timeB'), box: document.getElementById('timeB')?.parentElement, maxFontSize: 30 }
+        // 注意：這裡已經移除 scoreLargeText，讓 CSS 自己負責比分大小，不再縮小到消失
       ];
 
       elementsToFit.forEach(({ txt, box, maxFontSize }) => {
@@ -1064,7 +1154,7 @@
           container.style.setProperty('--turn-color', players.B.color);
         }
 
-        if (engine.timeMode === 'standard') {
+        if (engine.timeMode !== 'unlimited') {
           const currentRemaining = turn === 'A' ? engine.timeA : engine.timeB;
           if (currentRemaining <= 10) {
             container.classList.add('urgent');
