@@ -74,6 +74,8 @@
     button:disabled { background: rgba(226, 232, 240, 0.5); cursor: not-allowed; transform: none; box-shadow: none; color: #94a3b8; border-color: transparent;}
     .btn-action { background: linear-gradient(135deg, #3b82f6, #60a5fa); color: white; border: none; }
     .btn-action:hover { background: linear-gradient(135deg, #2563eb, #3b82f6); color: white; }
+    .btn-danger { background: linear-gradient(135deg, #ef4444, #f87171); color: white; border: none; }
+    .btn-danger:hover { background: linear-gradient(135deg, #dc2626, #ef4444); color: white; }
 
     #roomListContainer { max-height: 180px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin-top: 10px; padding-right: 5px; }
     .room-card { background: rgba(255, 255, 255, 0.8); border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px; display: flex; flex-direction: column; gap: 5px; transition: 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
@@ -100,7 +102,6 @@
     .player-col { width: 40%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; overflow: hidden; }
     .score-col { width: 20%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; overflow: hidden; }
 
-    /* 動態計算容器 - 給定絕對高度防止排版爆掉 */
     .fit-box-name { width: 100%; height: 42px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
     .fit-box-time { width: 100%; height: 36px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
     .fit-box-score { width: 100%; height: 48px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
@@ -108,7 +109,6 @@
     .player-name { font-weight: 900; white-space: nowrap; text-shadow: 0 1px 3px rgba(0,0,0,0.1); transition: color 0.3s; }
     .player-time { font-family: monospace; font-weight: bold; color: #334155; background: rgba(255,255,255,0.7); padding: 4px 12px; border-radius: 10px; box-shadow: inset 0 1px 3px rgba(0,0,0,0.05); white-space: nowrap; display: inline-block; }
 
-    /* 中間比分排版 */
     .score-small-top { font-size: 14px; font-weight: bold; color: #475569; letter-spacing: 1px; background: rgba(226, 232, 240, 0.6); padding: 2px 8px; border-radius: 6px; white-space: nowrap;}
     .score-large { display: flex; align-items: center; font-weight: 900; font-family: monospace; letter-spacing: 2px; white-space: nowrap; }
     .score-small-bottom { font-size: 14px; font-weight: bold; white-space: nowrap;}
@@ -152,12 +152,10 @@
 
     @media (max-aspect-ratio: 1/1) {
       body { flex-direction: column; }
-      
-      /* 側邊欄增加 padding-bottom 避免手機虛擬導覽列或鍵盤擋住底部輸入框 */
       body:not(.game-on) #sidebar { 
         width: 100%; height: 100vh; max-height: none; border-right: none; border-bottom: none; 
         flex-direction: column; justify-content: flex-start;
-        padding-bottom: 50px; /* 新增後備高度 */
+        padding-bottom: 50px; 
       }
       body:not(.game-on) .panel { width: 100%; box-sizing: border-box; flex: none; }
       body:not(.game-on) #main-area { display: none !important; } 
@@ -165,24 +163,18 @@
       body.game-on #sidebar { width: 100%; height: auto; border-right: none; border-bottom: 1px solid var(--glass-border); padding: 5px 10px; }
       body.game-on #main-area { display: flex !important; flex: 1; padding: 10px; }
       
-      /* 縮小標題字體與高度 */
       body:not(.game-on) #sidebar h1 { font-size: 22px; }
       body.game-on #sidebar h1 { font-size: 20px; }
       
-      /* HUD 手機版排版：啟用 Flex Wrap，讓玩家A和B各佔 50%，比分區佔 100% 擠到下一列 */
       #hud { padding: 10px; flex-wrap: wrap; }
       #hudA { width: 50%; order: 1; }
       #hudB { width: 50%; order: 2; }
       
       #hudCenter { 
-        width: 100%; 
-        order: 3; 
-        margin-top: 10px; 
-        padding-top: 8px;
-        border-top: 1px dashed rgba(148, 163, 184, 0.4); /* 加上分隔線讓視覺更清晰 */
+        width: 100%; order: 3; margin-top: 10px; padding-top: 8px;
+        border-top: 1px dashed rgba(148, 163, 184, 0.4); 
       }
       
-      /* 讓左右剩餘地雷的提示字體在手機上更適合閱讀 */
       .score-main-row { justify-content: space-between; padding: 0 10px; }
       .score-small-top, .score-small-bottom { font-size: 13px; transform: scale(1); }
     }
@@ -208,7 +200,7 @@
       <label>房間類型</label>
       <select id="roomPrivacy">
         <option value="public">🌐 公開 (顯示於大廳)</option>
-        <option value="private">🔒 私密 (6位數字代碼)</option>
+        <option value="private">🔒 私密 (6位專屬代碼)</option>
       </select>
       <label>時間模式</label>
       <select id="timeMode">
@@ -223,6 +215,9 @@
       <input type="range" id="mineCount" min="3" max="101" value="29">
       
       <button id="btnCreate" class="btn-action">建立並等待對手</button>
+      <!-- 新增：取消按鈕 (預設隱藏) -->
+      <button id="btnCancel" class="btn-danger" style="display:none;">取消等待</button>
+      
       <div id="status">準備就緒</div>
       <div id="privateCodeDisplay" style="display:none; text-align:center; margin-top:10px; font-weight:bold; font-size:20px; color:#3b82f6; letter-spacing:3px; background:#eff6ff; padding:8px; border-radius:8px;"></div>
     </div>
@@ -241,20 +236,15 @@
 
   <div id="main-area">
     <div id="hud">
-      <!-- 40% 玩家 A -->
       <div id="hudA" class="player-col">
         <div class="fit-box-name"><span class="player-name" id="nameA">等待房主...</span></div>
         <div class="fit-box-time"><span class="player-time" id="timeA">⏳ --:--</span></div>
       </div>
       
-      <!-- 20% 比分區 (手機版將變為 100% 獨立一列) -->
       <div id="hudCenter" class="score-col">
         <div class="score-small-top" id="remMinesText">剩餘地雷: --</div>
-        
         <div class="score-main-row">
           <div class="score-small-bottom"><span id="reqA" style="color:#3b82f6">再奪-個</span></div>
-          
-          <!-- 比分 fit-box 容器 -->
           <div class="fit-box-score">
             <div class="score-large" id="scoreLargeText">
               <span id="scoreA" style="color:#3b82f6">0</span>
@@ -262,12 +252,10 @@
               <span id="scoreB" style="color:#ef4444">0</span>
             </div>
           </div>
-          
           <div class="score-small-bottom"><span id="reqB" style="color:#ef4444">再奪-個</span></div>
         </div>
       </div>
 
-      <!-- 40% 玩家 B -->
       <div id="hudB" class="player-col">
         <div class="fit-box-name"><span class="player-name" id="nameB">等待對手...</span></div>
         <div class="fit-box-time"><span class="player-time" id="timeB">⏳ --:--</span></div>
@@ -301,6 +289,8 @@
     const mineCountInput = document.getElementById('mineCount');
     const sizeValSpan = document.getElementById('sizeVal');
     const mineValSpan = document.getElementById('mineVal');
+    const btnCreate = document.getElementById('btnCreate');
+    const btnCancel = document.getElementById('btnCancel');
 
     const niceColors = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6', '#f43f5e', '#ea580c', '#06b6d4'];
     myColorInput.value = niceColors[Math.floor(Math.random() * niceColors.length)];
@@ -357,8 +347,8 @@
     let lastHeartbeatTime = Date.now();
     let heartbeatInterval = null;
     let heartbeatCheckInterval = null;
-    const HEARTBEAT_INTERVAL_MS = 10000; // 每 10 秒發送一次
-    const HEARTBEAT_TIMEOUT_MS = 25000;  // 25 秒沒收到任何訊息視為斷線
+    const HEARTBEAT_INTERVAL_MS = 7000; 
+    const HEARTBEAT_TIMEOUT_MS = 15000;  
 
     let comboCount = 0;
     let comboPlayer = null;
@@ -432,9 +422,23 @@
       mqttClient.publish(lobbyTopic, JSON.stringify(payload));
       broadcastInterval = setInterval(() => { mqttClient.publish(lobbyTopic, JSON.stringify(payload)); }, 4000);
     }
+    
     function stopBroadcastingLobby() {
       if (broadcastInterval) clearInterval(broadcastInterval);
       if (myRoomId) mqttClient.publish(lobbyTopic, JSON.stringify({ action: 'remove', id: myRoomId }));
+    }
+
+    // 優化：關閉網頁前主動移除房間廣播
+    window.addEventListener('beforeunload', () => {
+      stopBroadcastingLobby();
+    });
+
+    // 修復 1：增加 XSS 防護處理函數
+    function escapeHTML(str) {
+      if (!str) return "";
+      return String(str).replace(/[&<>'"]/g, tag => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+      }[tag] || tag));
     }
 
     function renderRoomList() {
@@ -452,8 +456,10 @@
         const room = activeRooms[id];
         const card = document.createElement('div');
         card.className = 'room-card';
+        // 套用 escapeHTML 過濾房主名稱避免 XSS
+        const safeHostName = escapeHTML(room.hostName);
         card.innerHTML = `
-          <div class="room-info">🎮 ${room.hostName} 的房間</div>
+          <div class="room-info">🎮 ${safeHostName} 的房間</div>
           <div class="room-settings">📐 ${room.size}x${room.size} | 💣 ${room.mines} 顆</div>
           <button class="btn-join-room" onclick="joinGame('${room.id}')">加入對戰</button>
         `;
@@ -473,6 +479,7 @@
         engine['time' + engine.turn]--;
         if (engine['time' + engine.turn] <= 0) {
            gameActive = false;
+           if(timerInterval) clearInterval(timerInterval); // 防洩漏
            const winner = engine.turn === 'A' ? 'B' : 'A';
            if(conn) conn.send({ type: 'GAME_OVER', winner, reason: 'timeout' });
            showVictory(winner, 'timeout');
@@ -504,9 +511,9 @@
           statusText.innerText = "連線成功！";
           stopBroadcastingLobby();
           privateCodeDisplay.style.display = 'none';
+          btnCancel.style.display = 'none'; // 連線成功後隱藏取消按鈕
         }
 
-        // --- 心跳機制初始化 ---
         lastHeartbeatTime = Date.now();
         heartbeatInterval = setInterval(() => {
           if (conn && conn.open) {
@@ -515,28 +522,39 @@
         }, HEARTBEAT_INTERVAL_MS);
 
         heartbeatCheckInterval = setInterval(() => {
+          // 優化：如果遊戲已經結束 (分數大於0且非 active)，就不再判定斷線
+          if (!gameActive && (engine.scoreA > 0 || engine.scoreB > 0)) {
+            clearInterval(heartbeatInterval);
+            clearInterval(heartbeatCheckInterval);
+            return;
+          }
+
           if (Date.now() - lastHeartbeatTime > HEARTBEAT_TIMEOUT_MS) {
             clearInterval(heartbeatInterval);
             clearInterval(heartbeatCheckInterval);
             alert("連線逾時，對方已失去連線（超過 25 秒無回應）！");
             location.reload();
           }
-        }, 5000); // 每 5 秒檢查一次是否逾時
+        }, 5000); 
       });
 
       conn.on('data', handleNetworkData);
+      
       conn.on('close', () => { 
         clearInterval(heartbeatInterval);
         clearInterval(heartbeatCheckInterval);
-        alert("對方已離開遊戲！"); 
+        
+        // 優化：只有在遊戲還沒結束的情況下才警告並重整
+        if (!gameActive && (engine.scoreA > 0 || engine.scoreB > 0)) return; 
+        
+        alert("對方已斷開連線！"); 
         location.reload(); 
       });
     }
 
     function handleNetworkData(data) {
-      // 只要收到任何訊息，就更新心跳時間
       lastHeartbeatTime = Date.now();
-      if (data.type === 'PING') return; // 純心跳訊息，不需要後續處理
+      if (data.type === 'PING') return; 
 
       if (data.type === 'PROFILE') {
         if (isHost) {
@@ -569,11 +587,44 @@
         playSoundLocal(data.sound);
       }
       else if (data.type === 'GAME_OVER') {
-        gameActive = false; showVictory(data.winner, data.reason);
+        gameActive = false; 
+        if(timerInterval) clearInterval(timerInterval); // 防洩漏
+        showVictory(data.winner, data.reason);
       }
     }
 
-    document.getElementById('btnCreate').addEventListener('click', () => {
+    // 修復 2：取消房間按鈕需徹底清理所有連線及定時器
+    btnCancel.addEventListener('click', () => {
+      stopBroadcastingLobby();
+      if (peer) {
+        peer.destroy();
+        peer = null;
+      }
+      if (conn) {
+        conn.close();
+        conn = null;
+      }
+      clearInterval(heartbeatInterval);
+      clearInterval(heartbeatCheckInterval);
+      isHost = false;
+      btnCreate.style.display = 'block';
+      btnCreate.disabled = false;
+      btnCancel.style.display = 'none';
+      statusText.innerText = "準備就緒";
+      privateCodeDisplay.style.display = 'none';
+      renderRoomList();
+    });
+
+    // 修復 3：產生結合時間戳與亂數的 6 位高唯一性專屬代碼
+    const generateUniqueCode = () => {
+      const timePart = Date.now().toString(36).slice(-3);
+      const randPart = Math.random().toString(36).substring(2, 5);
+      return (timePart + randPart).toUpperCase();
+    };
+
+    btnCreate.addEventListener('click', () => {
+      if (audioCtx.state === 'suspended') audioCtx.resume(); // 預先喚醒 AudioContext
+      
       isHost = true;
       players.A = { name: myNameInput.value || "Host", color: myColorInput.value };
       engine.size = parseInt(document.getElementById('mapSize').value);
@@ -581,9 +632,11 @@
       engine.timeMode = document.getElementById('timeMode').value;
       
       const isPrivate = document.getElementById('roomPrivacy').value === 'private';
-      myRoomId = isPrivate ? Math.floor(100000 + Math.random() * 900000).toString() : Math.random().toString(36).substring(2, 10).toUpperCase();
+      // 替換原本的 Math.floor(100000 + Math.random() * 900000)
+      myRoomId = isPrivate ? generateUniqueCode() : Math.random().toString(36).substring(2, 10).toUpperCase();
 
-      document.getElementById('btnCreate').disabled = true;
+      btnCreate.style.display = 'none'; // 隱藏建立按鈕
+      btnCancel.style.display = 'block'; // 顯示取消按鈕
       statusText.innerText = "建立房間中...";
 
       peer = new Peer(myRoomId);
@@ -600,15 +653,17 @@
     });
 
     document.getElementById('btnManualJoin').addEventListener('click', () => {
+      if (audioCtx.state === 'suspended') audioCtx.resume(); // 預先喚醒 AudioContext
       const code = document.getElementById('manualJoinCode').value.toUpperCase().trim();
       if (!code) return alert('請輸入房間代碼');
       joinGame(code);
     });
 
     window.joinGame = function(targetId) {
+      if (audioCtx.state === 'suspended') audioCtx.resume(); // 預先喚醒 AudioContext
       isHost = false;
       players.B = { name: myNameInput.value || "Guest", color: myColorInput.value };
-      document.getElementById('btnCreate').disabled = true;
+      btnCreate.disabled = true;
       statusText.innerText = "連線中...";
       
       peer = new Peer();
@@ -679,7 +734,7 @@
         const winThreshold = Math.ceil(engine.minesCount / 2);
         if (engine.scoreA >= winThreshold || engine.scoreB >= winThreshold) {
           gameActive = false;
-          clearInterval(timerInterval);
+          if(timerInterval) clearInterval(timerInterval); // 防洩漏
           const winner = engine.scoreA > engine.scoreB ? 'A' : 'B';
           if(conn) conn.send({ type: 'GAME_OVER', winner, reason: 'score' });
           showVictory(winner, 'score');
@@ -794,16 +849,12 @@
       }
     }
 
-    // ==========================================
-    // JS 自動二元搜尋適配文字大小引擎 (加入比分區)
-    // ==========================================
     function autoFitAllTexts() {
       const elementsToFit = [
         { txt: document.getElementById('nameA'), box: document.getElementById('nameA')?.parentElement, maxFontSize: 42 },
         { txt: document.getElementById('timeA'), box: document.getElementById('timeA')?.parentElement, maxFontSize: 30 },
         { txt: document.getElementById('nameB'), box: document.getElementById('nameB')?.parentElement, maxFontSize: 42 },
         { txt: document.getElementById('timeB'), box: document.getElementById('timeB')?.parentElement, maxFontSize: 30 },
-        // 加入比分：將 scoreLargeText 放進引擎中自動撐滿 fit-box-score
         { txt: document.getElementById('scoreLargeText'), box: document.getElementById('scoreLargeText')?.parentElement, maxFontSize: 60 }
       ];
 
@@ -833,7 +884,11 @@
       });
     }
 
-    window.addEventListener('resize', autoFitAllTexts);
+    let resizeTimer = null;
+    window.addEventListener('resize', () => {
+      if (resizeTimer) clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(autoFitAllTexts, 100);
+    });
 
     function updateHUD(turn = null) {
       document.getElementById('nameA').innerText = players.A.name; 
@@ -889,13 +944,15 @@
         }
       }
 
-      // 當分數與文字更新後，進行動態字體撐滿計算
       autoFitAllTexts();
     }
 
     function hideOverlay() { overlay.classList.add('hidden'); }
 
     function showVictory(winnerCode, reason) {
+      clearInterval(heartbeatInterval);
+      clearInterval(heartbeatCheckInterval);
+      
       overlay.classList.remove('hidden');
       const wName = players[winnerCode].name, wColor = players[winnerCode].color;
       
