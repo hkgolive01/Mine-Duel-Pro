@@ -398,6 +398,10 @@
         const data = JSON.parse(message.toString());
         if (data.action === 'add') {
           if (data.id === myRoomId) return; 
+          
+          // 【修補：大廳假房間洗版】如果房間數 >= 50 且為新房間，則忽略以防當機
+          if (!activeRooms[data.id] && Object.keys(activeRooms).length >= 50) return;
+          
           activeRooms[data.id] = data;
           activeRooms[data.id].lastSeen = Date.now();
           renderRoomList();
@@ -433,7 +437,7 @@
       stopBroadcastingLobby();
     });
 
-    // 修復 1：增加 XSS 防護處理函數
+    // XSS 防護處理函數
     function escapeHTML(str) {
       if (!str) return "";
       return String(str).replace(/[&<>'"]/g, tag => ({
@@ -456,12 +460,17 @@
         const room = activeRooms[id];
         const card = document.createElement('div');
         card.className = 'room-card';
-        // 套用 escapeHTML 過濾房主名稱避免 XSS
+        
+        // 【修補：大廳 XSS 攻擊】全面過濾所有可能被注入的資料，防止惡意彈窗與代碼注入
         const safeHostName = escapeHTML(room.hostName);
+        const safeSize = parseInt(room.size) || 12;
+        const safeMines = parseInt(room.mines) || 20;
+        const safeId = escapeHTML(room.id);
+        
         card.innerHTML = `
           <div class="room-info">🎮 ${safeHostName} 的房間</div>
-          <div class="room-settings">📐 ${room.size}x${room.size} | 💣 ${room.mines} 顆</div>
-          <button class="btn-join-room" onclick="joinGame('${room.id}')">加入對戰</button>
+          <div class="room-settings">📐 ${safeSize}x${safeSize} | 💣 ${safeMines} 顆</div>
+          <button class="btn-join-room" onclick="joinGame('${safeId}')">加入對戰</button>
         `;
         roomListContainer.appendChild(card);
       });
@@ -593,7 +602,7 @@
       }
     }
 
-    // 修復 2：取消房間按鈕需徹底清理所有連線及定時器
+    // 取消房間按鈕需徹底清理所有連線及定時器
     btnCancel.addEventListener('click', () => {
       stopBroadcastingLobby();
       if (peer) {
@@ -615,7 +624,7 @@
       renderRoomList();
     });
 
-    // 修復 3：產生結合時間戳與亂數的 6 位高唯一性專屬代碼
+    // 產生結合時間戳與亂數的 6 位高唯一性專屬代碼
     const generateUniqueCode = () => {
       const timePart = Date.now().toString(36).slice(-3);
       const randPart = Math.random().toString(36).substring(2, 5);
@@ -716,6 +725,10 @@
 
     function processClick(x, y, playerRole) {
       if (!gameActive || engine.turn !== playerRole) return;
+      
+      // 【修補：防止座標越界導致當機】如果是無效的 x 或 y 點擊，直接略過
+      if (x < 0 || x >= engine.size || y < 0 || y >= engine.size) return;
+      
       const idx = y * engine.size + x;
       if (engine.revealed[idx]) return;
 
