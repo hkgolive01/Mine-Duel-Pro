@@ -114,20 +114,29 @@
     .score-small-bottom { font-size: 14px; font-weight: bold; white-space: nowrap;}
     .score-main-row { width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; }
     
+    /* 玻璃質感重製：更新 game-container 樣式 */
     #game-container { 
       position: relative; border-radius: 20px; padding: 12px; 
-      background: rgba(255, 255, 255, 0.6); 
-      border: 4px solid var(--turn-color); 
-      box-shadow: 0 15px 35px rgba(0,0,0,0.1); 
-      backdrop-filter: blur(10px);
-      transition: border-color 0.3s ease;
+      /* 降低背景不透明度，讓更多底色透上來 */
+      background: rgba(255, 255, 255, 0.2); 
+      border: 1px solid rgba(255, 255, 255, 0.6); 
+      /* 增加內發光與外陰影 */
+      box-shadow: 0 15px 35px rgba(0,0,0,0.1), inset 0 0 20px rgba(255,255,255,0.4); 
+      /* 強烈的 iOS 毛玻璃模糊與飽和度提升 */
+      backdrop-filter: blur(25px) saturate(150%);
+      -webkit-backdrop-filter: blur(25px) saturate(150%);
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
     }
     
-    canvas { border-radius: 12px; background: #f8fafc; cursor: crosshair; display: block; max-width: 100%; height: auto; }
+    canvas { 
+      border-radius: 12px; 
+      background: transparent; /* 改為全透明 */
+      cursor: crosshair; display: block; max-width: 100%; height: auto; 
+    }
 
     @keyframes blink-turn {
-      0%, 49.9% { border-color: var(--turn-color); box-shadow: 0 0 15px var(--turn-color); }
-      50%, 100% { border-color: transparent; box-shadow: 0 0 0 transparent; }
+      0%, 49.9% { border-color: var(--turn-color); box-shadow: 0 0 25px var(--turn-color), inset 0 0 15px rgba(255,255,255,0.5); }
+      50%, 100% { border-color: rgba(255,255,255,0.6); box-shadow: 0 15px 35px rgba(0,0,0,0.1), inset 0 0 20px rgba(255,255,255,0.4); }
     }
     #game-container.urgent {
       animation: blink-turn 0.6s infinite;
@@ -396,10 +405,7 @@
         const data = JSON.parse(message.toString());
         if (data.action === 'add') {
           if (data.id === myRoomId) return; 
-          
-          // 修補 C：大廳假房間洗版限制。限制活躍房間數量，避免記憶體與效能耗盡
           if (Object.keys(activeRooms).length >= 50 && !activeRooms[data.id]) return;
-          
           activeRooms[data.id] = data;
           activeRooms[data.id].lastSeen = Date.now();
           renderRoomList();
@@ -457,11 +463,10 @@
         const card = document.createElement('div');
         card.className = 'room-card';
         
-        // 修補 B：完整防堵 XSS。將所有外部參數過濾，避免惡意代碼注入
         const safeHostName = escapeHTML(String(room.hostName));
-        const safeSize = parseInt(room.size) || 12; // 強轉整數
-        const safeMines = parseInt(room.mines) || 29; // 強轉整數
-        const safeId = escapeHTML(String(room.id)).replace(/'/g, ""); // 清理單引號避免跳脫
+        const safeSize = parseInt(room.size) || 12; 
+        const safeMines = parseInt(room.mines) || 29; 
+        const safeId = escapeHTML(String(room.id)).replace(/'/g, ""); 
 
         card.innerHTML = `
           <div class="room-info">🎮 ${safeHostName} 的房間</div>
@@ -536,7 +541,7 @@
           if (Date.now() - lastHeartbeatTime > HEARTBEAT_TIMEOUT_MS) {
             clearInterval(heartbeatInterval);
             clearInterval(heartbeatCheckInterval);
-            alert("連線逾時，對方已失去連線（超過 25 秒無回應）！");
+            alert("連線逾時，對方已失去連線（超過 15 秒無回應）！");
             location.reload();
           }
         }, 5000); 
@@ -715,7 +720,6 @@
     function processClick(x, y, playerRole) {
       if (!gameActive || engine.turn !== playerRole) return;
       
-      // 修補 D：座標越界檢查，防止建立超大陣列導致記憶體溢出 (OOM) 或遊戲崩潰
       if (typeof x !== 'number' || typeof y !== 'number') return;
       if (x < 0 || x >= engine.size || y < 0 || y >= engine.size) return;
 
@@ -807,7 +811,25 @@
       }
     });
 
+    // ==========================================
+    // 玻璃質感繪圖引擎 (方案 2 + 3 核心更新)
+    // ==========================================
+    function drawRoundedRect(ctx, x, y, width, height, radius) {
+      ctx.beginPath();
+      ctx.moveTo(x + radius, y);
+      ctx.lineTo(x + width - radius, y);
+      ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+      ctx.lineTo(x + width, y + height - radius);
+      ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+      ctx.lineTo(x + radius, y + height);
+      ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+      ctx.lineTo(x, y + radius);
+      ctx.quadraticCurveTo(x, y, x + radius, y);
+      ctx.closePath();
+    }
+
     function drawBoard() {
+      // 清除畫布，保持透明
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       const grid = isHost ? engine.size : (clientView ? clientView.size : 12);
       if (!grid) return;
@@ -827,25 +849,80 @@
             rev = c.r; mine = c.m; owner = c.o; num = c.n;
           }
 
+          // 加入間距 (Padding)，徹底解決邊界被覆蓋的問題
+          const pad = 2; 
+          const cx = cellX + pad;
+          const cy = cellY + pad;
+          const cw = cellSize - pad * 2;
+          const ch = cellSize - pad * 2;
+          const radius = Math.max(3, cw * 0.15); // 動態圓角
+
           if (!rev) {
-            ctx.fillStyle = '#ffffff'; ctx.fillRect(cellX, cellY, cellSize, cellSize);
-            ctx.fillStyle = 'rgba(255,255,255,0.9)'; ctx.fillRect(cellX, cellY, cellSize, cellSize / 8); ctx.fillRect(cellX, cellY, cellSize / 8, cellSize);
-            ctx.fillStyle = 'rgba(0,0,0,0.06)'; ctx.fillRect(cellX, cellY + cellSize - cellSize / 8, cellSize, cellSize / 8); ctx.fillRect(cellX + cellSize - cellSize / 8, cellY, cellSize / 8, cellSize);
-            ctx.strokeStyle = '#e2e8f0'; ctx.strokeRect(cellX, cellY, cellSize, cellSize);
+            // 未翻開：立體玻璃磚
+            // 1. 玻璃半透明漸層底色
+            const grad = ctx.createLinearGradient(cx, cy, cx, cy + ch);
+            grad.addColorStop(0, 'rgba(255, 255, 255, 0.85)');
+            grad.addColorStop(1, 'rgba(255, 255, 255, 0.3)');
+            ctx.fillStyle = grad;
+            drawRoundedRect(ctx, cx, cy, cw, ch, radius);
+            ctx.fill();
+
+            // 2. 玻璃邊緣的高光反光 (左與上)
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+            ctx.lineWidth = 1.5;
+            drawRoundedRect(ctx, cx + 1, cy + 1, cw - 2, ch - 2, radius);
+            ctx.stroke();
+
+            // 3. 玻璃底部的微弱陰影
+            ctx.strokeStyle = 'rgba(0, 0, 0, 0.08)';
+            ctx.lineWidth = 1;
+            drawRoundedRect(ctx, cx, cy, cw, ch, radius);
+            ctx.stroke();
+
           } else {
-            ctx.fillStyle = '#f1f5f9'; ctx.fillRect(cellX, cellY, cellSize, cellSize);
-            ctx.strokeStyle = '#cbd5e1'; ctx.strokeRect(cellX, cellY, cellSize, cellSize);
+            // 已翻開：凹陷的平滑玻璃
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.1)'; 
+            drawRoundedRect(ctx, cx, cy, cw, ch, radius);
+            ctx.fill();
+            
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+            ctx.lineWidth = 1;
+            drawRoundedRect(ctx, cx, cy, cw, ch, radius);
+            ctx.stroke();
 
             if (mine) {
+              // 地雷與玩家顏色光暈
               const pColor = (owner === 'A') ? players.A.color : players.B.color;
-              ctx.fillStyle = pColor + '50'; ctx.fillRect(cellX, cellY, cellSize, cellSize);
-              ctx.font = `${cellSize * 0.55}px Arial`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-              ctx.fillText('🚩', cellX + cellSize/2, cellY + cellSize/2);
+              
+              // 在格子內部畫一個漸層發光背景
+              const glowGrad = ctx.createRadialGradient(cx + cw/2, cy + ch/2, 0, cx + cw/2, cy + ch/2, cw);
+              glowGrad.addColorStop(0, pColor + '99'); // 中心較濃 (HEX + Alpha)
+              glowGrad.addColorStop(1, pColor + '20'); // 邊緣變淡
+              
+              ctx.fillStyle = glowGrad;
+              drawRoundedRect(ctx, cx + 1, cy + 1, cw - 2, ch - 2, radius);
+              ctx.fill();
+
+              // 發光的旗幟
+              ctx.shadowColor = pColor;
+              ctx.shadowBlur = 12;
+              ctx.font = `${ch * 0.55}px Arial`; 
+              ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+              ctx.fillText('🚩', cx + cw/2, cy + ch/2 + 2);
+              ctx.shadowBlur = 0; // 重置陰影
+
             } else if (num > 0) {
+              // 發光的數字
               const colors = ['#2563eb', '#16a34a', '#dc2626', '#9333ea', '#ea580c', '#0d9488', '#475569', '#0f172a'];
               const cStr = colors[num - 1] || '#475569';
-              ctx.font = `900 ${cellSize * 0.55}px monospace`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-              ctx.fillStyle = cStr; ctx.fillText(num, cellX + cellSize/2, cellY + cellSize/2); 
+              
+              ctx.shadowColor = cStr + '80'; // 加上與文字同色的光暈
+              ctx.shadowBlur = 8;
+              ctx.font = `900 ${ch * 0.55}px monospace`; 
+              ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+              ctx.fillStyle = cStr; 
+              ctx.fillText(num, cx + cw/2, cy + ch/2 + 2); 
+              ctx.shadowBlur = 0; // 重置陰影
             }
           }
         }
@@ -973,7 +1050,8 @@
       document.getElementById('btnHome').style.display = 'block';
     }
 
-    ctx.fillStyle = '#f8fafc'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    // 刪除原本的白色底部填色，保持透明以發揮毛玻璃效果
+    // ctx.fillStyle = '#f8fafc'; ctx.fillRect(0, 0, canvas.width, canvas.height); 
   </script>
 </body>
 </html>
