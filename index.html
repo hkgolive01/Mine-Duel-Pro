@@ -127,6 +127,12 @@
       -webkit-backdrop-filter: blur(25px) saturate(150%);
       transition: border-color 0.3s ease, box-shadow 0.3s ease;
     }
+
+    /* 確保遊戲進行時，外框會正常顯示當下玩家的顏色 */
+    body.game-on #game-container {
+      border: 2px solid var(--turn-color);
+      box-shadow: 0 15px 35px rgba(0,0,0,0.1), 0 0 20px var(--turn-color), inset 0 0 15px rgba(255,255,255,0.4);
+    }
     
     canvas { 
       border-radius: 12px; 
@@ -134,9 +140,16 @@
       cursor: crosshair; display: block; max-width: 100%; height: auto; 
     }
 
+    /* 調整 10 秒倒數警告的動畫，讓切換與閃爍更強烈 */
     @keyframes blink-turn {
-      0%, 49.9% { border-color: var(--turn-color); box-shadow: 0 0 25px var(--turn-color), inset 0 0 15px rgba(255,255,255,0.5); }
-      50%, 100% { border-color: rgba(255,255,255,0.6); box-shadow: 0 15px 35px rgba(0,0,0,0.1), inset 0 0 20px rgba(255,255,255,0.4); }
+      0%, 49.9% { 
+        border-color: var(--turn-color); 
+        box-shadow: 0 0 35px var(--turn-color), inset 0 0 25px var(--turn-color); 
+      }
+      50%, 100% { 
+        border-color: rgba(255,255,255,0.6); 
+        box-shadow: 0 15px 35px rgba(0,0,0,0.1), inset 0 0 20px rgba(255,255,255,0.4); 
+      }
     }
     #game-container.urgent {
       animation: blink-turn 0.6s infinite;
@@ -346,7 +359,7 @@
     let engine = { 
       size: 12, minesCount: 29, mines: [], numbers: [], revealed: [], owners: [], 
       scoreA: 0, scoreB: 0, turn: 'A', 
-      timeMode: 'standard', timeA: 60, timeB: 60 
+      timeMode: 'standard', timeA: 60, timeB: 60, lastMove: null
     };
     let clientView = null;
     let timerInterval = null;
@@ -688,6 +701,7 @@
       comboCount = 0; comboPlayer = null; 
 
       engine.turn = Math.random() < 0.5 ? 'A' : 'B';
+      engine.lastMove = null; // 初始化最後一步
       gameActive = true;
       document.body.classList.add('game-on'); 
 
@@ -727,6 +741,7 @@
       if (engine.revealed[idx]) return;
 
       engine.revealed[idx] = true;
+      engine.lastMove = { x: x, y: y, p: playerRole }; // 記錄最後一步
 
       if (engine.mines[idx]) {
         engine.owners[idx] = playerRole;
@@ -790,6 +805,7 @@
         type: 'GAME_SYNC', gameActive: gameActive, size: engine.size, minesCount: engine.minesCount,
         scoreA: engine.scoreA, scoreB: engine.scoreB, turn: engine.turn, 
         timeMode: engine.timeMode, timeA: engine.timeA, timeB: engine.timeB,
+        lastMove: engine.lastMove, // 同步最後一步
         cells: cells
       });
     }
@@ -841,12 +857,23 @@
           let cellX = x * cellSize, cellY = y * cellSize;
           
           let rev, mine, owner, num;
+          let isLastMove = false;
+          let lastP = null;
+          
           if (isHost) {
             rev = engine.revealed[idx]; mine = engine.mines[idx]; owner = engine.owners[idx]; num = engine.numbers[idx];
+            // 判斷是否為最後一步
+            if (engine.lastMove && engine.lastMove.x === x && engine.lastMove.y === y) {
+              isLastMove = true; lastP = engine.lastMove.p;
+            }
           } else {
             if(!clientView) return;
             let c = clientView.cells[idx];
             rev = c.r; mine = c.m; owner = c.o; num = c.n;
+            // 判斷是否為最後一步
+            if (clientView.lastMove && clientView.lastMove.x === x && clientView.lastMove.y === y) {
+              isLastMove = true; lastP = clientView.lastMove.p;
+            }
           }
 
           // 加入間距 (Padding)，徹底解決邊界被覆蓋的問題
@@ -924,6 +951,19 @@
               ctx.fillText(num, cx + cw/2, cy + ch/2 + 2); 
               ctx.shadowBlur = 0; // 重置陰影
             }
+          }
+
+          // 在每個格子的處理邏輯最底部，疊加繪製最後一步的淺色光圈
+          if (isLastMove) {
+            ctx.save();
+            const pColor = (lastP === 'A') ? players.A.color : players.B.color;
+            ctx.strokeStyle = pColor + '80'; // 添加 80 代表透明度，達到淺色包圍的效果
+            ctx.lineWidth = 4;
+            ctx.shadowColor = pColor;
+            ctx.shadowBlur = 12;
+            drawRoundedRect(ctx, cx, cy, cw, ch, radius);
+            ctx.stroke();
+            ctx.restore();
           }
         }
       }
@@ -1050,8 +1090,6 @@
       document.getElementById('btnHome').style.display = 'block';
     }
 
-    // 刪除原本的白色底部填色，保持透明以發揮毛玻璃效果
-    // ctx.fillStyle = '#f8fafc'; ctx.fillRect(0, 0, canvas.width, canvas.height); 
   </script>
 </body>
 </html>
