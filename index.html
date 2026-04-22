@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mine Duel - Practice Mode</title>
+  <title>Mine Duel - Duel Mode</title>
   
   <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
   <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
@@ -67,6 +67,63 @@
     .btn-refresh:hover { transform: translateY(-50%) rotate(180deg); }
     .btn-sound:hover { transform: translateY(-50%) scale(1.1); }
 
+    /* AI 開關按鈕，位置與聲音按鈕完全重疊 */
+    #btnToggleAI {
+      position: absolute; 
+      top: 50%; 
+      transform: translateY(-50%); 
+      left: 0; 
+      width: 36px; 
+      height: 36px; 
+      padding: 0; 
+      margin: 0;
+      background: rgba(255, 255, 255, 0.7); 
+      border: 1px solid var(--glass-border);
+      border-radius: 50%; 
+      font-size: 16px; 
+      display: none; 
+      align-items: center; 
+      justify-content: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05); 
+      cursor: pointer; 
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      backdrop-filter: blur(5px);
+    }
+    
+    #btnToggleAI:hover {
+      background: #ffffff;
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2); 
+      transform: translateY(-50%) scale(1.1); 
+    }
+    #btnToggleAI.active { background: #10b981; border-color: #059669; box-shadow: 0 4px 12px rgba(16,185,129,0.4); }
+
+    /* 認輸按鈕樣式 */
+    #btnResign {
+      position: absolute; top: 50%; transform: translateY(-50%); right: 0;
+      width: 36px; height: 36px; padding: 0; margin: 0;
+      background: rgba(255, 255, 255, 0.7); border: 1px solid var(--glass-border);
+      border-radius: 50%; font-size: 16px; display: none; 
+      align-items: center; justify-content: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05); cursor: pointer; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      backdrop-filter: blur(5px); color: #475569;
+    }
+    #btnResign:hover { 
+      background: #ffffff; 
+      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2); 
+      color: #ef4444; border-color: #ef4444; 
+      transform: translateY(-50%) scale(1.1); 
+    }
+
+    /* 對戰模式下顯示認輸 */
+    body.game-on #btnResign {
+      display: flex;
+    }
+
+    /* 練習模式下隱藏認輸按鈕 */
+    body.game-on.practice-mode #btnResign {
+      display: none !important;
+    }
+
     .panel {
       background: rgba(255, 255, 255, 0.6); border: 1px solid var(--glass-border);
       border-radius: 16px; padding: 15px; box-shadow: var(--glass-shadow); transition: opacity 0.3s;
@@ -76,7 +133,7 @@
     body.game-on #sidebar .panel { display: none !important; }
     body.game-on #sidebar { 
       justify-content: center; height: auto; min-height: unset; 
-      padding: 10px 20px; background: transparent; border: none; box-shadow: none;
+      padding: 5px 10px; margin: 0; background: transparent; border: none; box-shadow: none;
     }
     body.game-on .sidebar-header .btn-refresh,
     body.game-on .sidebar-header .btn-sound { display: none; }
@@ -115,11 +172,12 @@
 
     /* ================= 主遊戲區 ================= */
     #main-area { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; padding: 10px; box-sizing: border-box;}
-    
+    body.game-on #main-area { padding: 5px; }
+
     #hud {
       display: flex; align-items: center; justify-content: space-between;
       background: var(--glass-bg); backdrop-filter: blur(15px); border: 1px solid var(--glass-border);
-      padding: 12px 15px; border-radius: 20px; margin-bottom: 15px; box-shadow: var(--glass-shadow); z-index: 5;
+      padding: 6px 12px; border-radius: 12px; margin-bottom: 8px; box-shadow: var(--glass-shadow); z-index: 5;
       width: 100%; max-width: 724px; box-sizing: border-box;
     }
 
@@ -128,7 +186,7 @@
 
     .fit-box-name { width: 100%; height: 42px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
     .fit-box-time { width: 100%; height: 36px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-    .fit-box-score { width: 100%; height: 48px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+    .fit-box-score { width: 100%; height: auto; min-height: 36px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
 
     .player-name { font-weight: 900; white-space: nowrap; text-shadow: 0 1px 3px rgba(0,0,0,0.1); transition: color 0.3s; }
     .player-time { font-family: monospace; font-weight: bold; color: #334155; background: rgba(255,255,255,0.7); padding: 4px 12px; border-radius: 10px; box-shadow: inset 0 1px 3px rgba(0,0,0,0.05); white-space: nowrap; display: inline-block; }
@@ -137,12 +195,6 @@
     .score-large { display: flex; align-items: center; font-weight: 900; font-family: monospace; letter-spacing: 2px; white-space: nowrap; }
     .score-small-bottom { font-size: 14px; font-weight: bold; white-space: nowrap;}
     .score-main-row { width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; }
-    
-    #btnToggleAI {
-      display: none; width: auto; padding: 4px 12px; font-size: 13px; border-radius: 8px; margin-top: 5px;
-      border: 1px solid #cbd5e1; background: #f1f5f9; color: #475569; cursor: pointer; font-weight: bold; transition: 0.2s;
-    }
-    #btnToggleAI.active { background: #10b981; color: white; border-color: #059669; }
 
     #game-container { 
       position: relative; border-radius: 20px; padding: 12px; 
@@ -186,19 +238,54 @@
 
     /* ================= 手機版優化區 ================= */
     @media (max-aspect-ratio: 1/1) {
-      body { flex-direction: column; }
-      body:not(.game-on) #sidebar { width: 100%; height: 100vh; max-height: none; border-right: none; border-bottom: none; flex-direction: column; justify-content: flex-start; padding-bottom: calc(120px + env(safe-area-inset-bottom)); }
+      body { 
+        height: auto; 
+        min-height: 100vh; 
+        flex-direction: column; 
+        overflow-y: auto; 
+        overflow-x: hidden; 
+      }
+      
+      body:not(.game-on) #sidebar { width: 100%; height: auto; min-height: 100vh; border-right: none; border-bottom: none; flex-direction: column; justify-content: flex-start; padding-bottom: calc(40px + env(safe-area-inset-bottom)); }
       body:not(.game-on) .panel { width: 100%; box-sizing: border-box; flex: none; }
       body:not(.game-on) #main-area { display: none !important; } 
-      body.game-on #sidebar { width: 100%; height: auto; border-right: none; border-bottom: 1px solid var(--glass-border); padding: 5px 10px; }
-      body.game-on #main-area { display: flex !important; flex: 1; padding: 10px; padding-bottom: calc(20px + env(safe-area-inset-bottom));}
+      
+      body.game-on #sidebar { width: 100%; height: auto; border-right: none; border-bottom: 1px solid var(--glass-border); padding: 5px; position: sticky; top: 0; z-index: 50; }
+      body.game-on #main-area { display: flex !important; flex: 1; padding: 5px; padding-bottom: calc(20px + env(safe-area-inset-bottom)); }
+      
       body:not(.game-on) #sidebar h1 { font-size: 22px; }
       body.game-on #sidebar h1 { font-size: 20px; }
-      #hud { padding: 10px; flex-wrap: wrap; }
+      
+      #hud { padding: 8px; flex-wrap: wrap; margin-bottom: 5px; }
       #hudA { width: 50%; order: 1; }
       #hudB { width: 50%; order: 2; }
-      #hudCenter { width: 100%; order: 3; margin-top: 10px; padding-top: 8px; border-top: 1px dashed rgba(148, 163, 184, 0.4); }
-      .score-main-row { justify-content: space-between; padding: 0 10px; }
+      
+      #hudCenter { 
+        display: grid; 
+        grid-template-rows: auto auto; 
+        grid-template-columns: 1fr; 
+        justify-items: center; 
+        align-items: center; 
+        width: 100%; 
+        order: 3; 
+        margin-top: 5px; 
+        padding-top: 5px; 
+        border-top: 1px dashed rgba(148, 163, 184, 0.4); 
+        gap: 4px;
+      }
+      .score-small-top { grid-row: 1; grid-column: 1; }
+      .fit-box-score { grid-row: 2; grid-column: 1; width: 100%; }
+      
+      .score-main-row { 
+        grid-row: 2; 
+        grid-column: 1; 
+        width: 100%; 
+        justify-content: space-between; 
+        padding: 0 15px; 
+        box-sizing: border-box;
+        z-index: 10;
+        pointer-events: none; 
+      }
       .score-small-top, .score-small-bottom { font-size: 13px; transform: scale(1); }
     }
   </style>
@@ -208,8 +295,14 @@
   <div id="sidebar">
     <div class="sidebar-header">
       <button id="soundToggleBtn" class="btn-sound" title="切換音效">🔊</button>
-      <h1>Mine Duel</h1>
+      <button id="btnToggleAI" title="切換 AI 機率提示">🤖</button>
+
+      <div style="display: flex; align-items: center; justify-content: center;">
+        <h1>Mine Duel</h1>
+      </div>
+
       <button class="btn-refresh" onclick="location.reload()" title="清空所有並刷新">🔄</button>
+      <button id="btnResign" title="認輸">🏳️</button>
     </div>
     
     <div class="panel">
@@ -227,12 +320,24 @@
         <option value="public">🌐 公開 (顯示於大廳)</option>
         <option value="private">🔒 私密 (6位專屬代碼)</option>
       </select>
+      
       <label>時間模式</label>
       <select id="timeMode">
         <option value="fast">⚡ 快速 (20秒 + 2秒/步)</option>
         <option value="standard" selected>⏳ 標準 (60秒 + 3秒/步)</option>
         <option value="slow">🐢 慢速 (120秒 + 4秒/步)</option>
       </select>
+
+      <label>AI 模式</label>
+      <select id="aiModeSelect">
+        <option value="none" selected>🚫 默認 不允許使用AI</option>
+        <option value="1">💡 提供 1 次使用*</option>
+        <option value="3">💡 提供 3 次使用*</option>
+        <option value="unlimited">♾️ 無限制使用</option>
+      </select>
+      <div style="font-size: 11px; color: #64748b; margin-top: 5px; line-height: 1.3;">
+        *為只能在比分落後時使用，一旦再次點擊畫面，AI建議將會消失
+      </div>
       
       <label>棋盤大小: <span id="sizeVal" style="color:var(--accent)">12</span></label>
       <input type="range" id="mapSize" min="4" max="20" value="12">
@@ -261,7 +366,7 @@
     <!-- 本機練習模式介面 -->
     <div class="panel" id="practicePanel">
       <h3>4. 本機練習模式 🛠️</h3>
-      <p style="font-size: 13px; color: #475569; margin-bottom: 10px;">單機雙人熱座對戰，無計時。戰鬥中可隨時開關 AI 機率算法檢查解法。</p>
+      <p style="font-size: 13px; color: #475569; margin-bottom: 10px;">單機雙人對戰，無計時。戰鬥中可隨時開關 AI 機率建議。</p>
       <button id="btnStartPractice" class="btn-practice">進入練習模式</button>
     </div>
   </div>
@@ -275,19 +380,17 @@
       
       <div id="hudCenter" class="score-col">
         <div class="score-small-top" id="remMinesText">剩餘地雷: --</div>
-        <div class="fit-box-score" style="margin: 5px 0;">
+        <div class="fit-box-score">
           <div class="score-large" id="scoreLargeText">
             <span id="scoreA" style="color:#3b82f6">0</span>
             <span style="color:#94a3b8; margin: 0 5px;">:</span>
             <span id="scoreB" style="color:#ef4444">0</span>
           </div>
         </div>
-        <div class="score-main-row" style="gap: 20px;">
+        <div class="score-main-row">
           <div class="score-small-bottom"><span id="reqA" style="color:#3b82f6">再奪-個</span></div>
           <div class="score-small-bottom"><span id="reqB" style="color:#ef4444">再奪-個</span></div>
         </div>
-        <!-- 戰鬥階段隨時切換 AI 的按鈕 -->
-        <button id="btnToggleAI">🤖 顯示 AI 機率</button>
       </div>
 
       <div id="hudB" class="player-col">
@@ -318,6 +421,8 @@
     const overlay = document.getElementById('overlay');
     const roomListContainer = document.getElementById('roomListContainer');
     const privateCodeDisplay = document.getElementById('privateCodeDisplay');
+    const btnToggleAI = document.getElementById('btnToggleAI');
+    const btnResign = document.getElementById('btnResign');
     
     let isSoundOn = true;
     const soundToggleBtn = document.getElementById('soundToggleBtn');
@@ -327,24 +432,77 @@
       if (audioCtx.state === 'suspended') audioCtx.resume();
     });
 
-    // ================= 本機練習模式與 AI 變數邏輯 =================
+    // ================= 變數邏輯與 AI UI 更新 =================
     let isPracticeMode = false;
     let isAIToggledOn = false;
     let aiProbabilities = [];
-    const btnToggleAI = document.getElementById('btnToggleAI');
+    let myAiUsesLeft = 0; // 紀錄自己剩餘的 AI 扣除次數
+
+    function updateAIBtnUI() {
+      if (!gameActive) {
+        btnToggleAI.style.display = 'none';
+        return;
+      }
+      if (isPracticeMode || engine.aiMode === 'unlimited') {
+        btnToggleAI.innerHTML = '🤖';
+        btnToggleAI.style.display = 'flex';
+        btnToggleAI.style.opacity = '1';
+        btnToggleAI.style.pointerEvents = 'auto';
+      } else if (engine.aiMode === '1' || engine.aiMode === '3') {
+        btnToggleAI.innerHTML = `🤖<span style="font-size:11px; margin-left:1px; font-weight:bold">${myAiUsesLeft}</span>`;
+        btnToggleAI.style.display = 'flex';
+        if (myAiUsesLeft <= 0 && !isAIToggledOn) {
+          btnToggleAI.style.opacity = '0.5';
+          btnToggleAI.style.pointerEvents = 'none';
+        } else {
+          btnToggleAI.style.opacity = '1';
+          btnToggleAI.style.pointerEvents = 'auto';
+        }
+      } else {
+        btnToggleAI.style.display = 'none';
+      }
+    }
 
     btnToggleAI.addEventListener('click', () => {
+      if (!gameActive) return;
+      
+      // 開啟前的限制檢查
+      if (!isAIToggledOn && !isPracticeMode && (engine.aiMode === '1' || engine.aiMode === '3')) {
+        let myScore = isHost ? engine.scoreA : engine.scoreB;
+        let opScore = isHost ? engine.scoreB : engine.scoreA;
+        if (myScore >= opScore) {
+          alert("只能在比分落後時使用 AI！");
+          return;
+        }
+        if (myAiUsesLeft <= 0) {
+          alert("AI 使用次數已耗盡！");
+          return;
+        }
+        myAiUsesLeft--;
+        updateAIBtnUI();
+      }
+
       isAIToggledOn = !isAIToggledOn;
       if (isAIToggledOn) {
         btnToggleAI.classList.add('active');
-        btnToggleAI.innerText = '🤖 關閉 AI 機率';
-        if (gameActive) calculateAIProbabilities();
+        calculateAIProbabilities();
       } else {
         btnToggleAI.classList.remove('active');
-        btnToggleAI.innerText = '🤖 顯示 AI 機率';
-        aiProbabilities = Array(engine.size * engine.size).fill(null); // 清空計算結果，節省記憶體與渲染
+        aiProbabilities = Array(engine.size * engine.size).fill(null); 
       }
       drawBoard();
+    });
+
+    btnResign.addEventListener('click', () => {
+      if (!gameActive) return;
+      if (confirm("確定要認輸並返回主頁嗎？")) {
+        gameActive = false;
+        if (timerInterval) clearInterval(timerInterval);
+        const winner = isHost ? 'B' : 'A';
+        if (conn) conn.send({ type: 'GAME_OVER', winner, reason: 'resign' });
+        // 認輸者直接返回主頁，不顯示結算畫面
+        location.reload();
+      }
     });
 
     document.getElementById('btnStartPractice').addEventListener('click', () => {
@@ -356,9 +514,10 @@
       
       engine.size = parseInt(document.getElementById('mapSize').value);
       engine.minesCount = parseInt(document.getElementById('mineCount').value);
-      engine.timeMode = 'none'; // 取消計時
+      engine.timeMode = 'none'; 
+      engine.aiMode = 'unlimited';
       
-      btnToggleAI.style.display = 'block'; // 顯示戰鬥中 AI 開關
+      document.body.classList.add('practice-mode'); 
       
       stopBroadcastingLobby();
       if(peer) peer.destroy();
@@ -374,45 +533,79 @@
       startGameEngine();
     });
 
-  // 核心：精確且安全的 BigInt 組合數計算
-function getCombinations(n, k) {
-  if (k < 0 || k > n || n < 0) return 0n;
-  if (k === 0 || k === n) return 1n;
-  let bn = BigInt(n), bk = BigInt(k);
-  if (bk > bn / 2n) bk = bn - bk;
-  let res = 1n;
-  for (let i = 1n; i <= bk; i++) {
-    res = (res * bn - res * (i - 1n)) / i;
+  function getCombinations(n, k) {
+    if (k < 0 || k > n || n < 0) return 0n;
+    if (k === 0 || k === n) return 1n;
+    let bn = BigInt(n), bk = BigInt(k);
+    if (bk > bn / 2n) bk = bn - bk;
+    let res = 1n;
+    for (let i = 1n; i <= bk; i++) {
+      res = (res * bn - res * (i - 1n)) / i;
+    }
+    return res;
   }
-  return res;
-}
 
-// 終極版：區域化 AI 機率計算引擎 (Region-Based Solver)
-function calculateAIProbabilities() {
-  const totalCells = engine.size * engine.size;
-  // 假設 aiProbabilities 是全域變數，初始化為 0
-  aiProbabilities = Array(totalCells).fill(0);
+  function calculateAIProbabilities() {
+    const totalCells = engine.size * engine.size;
+    aiProbabilities = Array(totalCells).fill(0);
 
-  let totalRemainingMines = engine.minesCount - engine.scoreA - engine.scoreB;
-  let unrevealed = new Set();
-  
-  for (let i = 0; i < totalCells; i++) {
-    if (!engine.revealed[i]) unrevealed.add(i);
-  }
-  if (unrevealed.size === 0) return;
+    let totalRemainingMines = engine.minesCount - engine.scoreA - engine.scoreB;
+    let unrevealed = new Set();
+    
+    for (let i = 0; i < totalCells; i++) {
+      if (!engine.revealed[i]) unrevealed.add(i);
+    }
+    if (unrevealed.size === 0) return;
 
-  let knownMines = new Set();
-  let knownSafe = new Set();
+    let knownMines = new Set();
+    let knownSafe = new Set();
 
-  // 階段一：基礎推導，清理明顯的地雷與安全格
-  let changed = true;
-  while (changed) {
-    changed = false;
+    let changed = true;
+    while (changed) {
+      changed = false;
+      for (let i = 0; i < totalCells; i++) {
+        if (engine.revealed[i] && engine.numbers[i] > 0 && !engine.mines[i]) {
+          let unrevNeighbors = [];
+          let mineCount = 0;
+          let x = i % engine.size, y = Math.floor(i / engine.size);
+          for (let dy = -1; dy <= 1; dy++) {
+            for (let dx = -1; dx <= 1; dx++) {
+              if (dx === 0 && dy === 0) continue;
+              let nx = x + dx, ny = y + dy;
+              if (nx >= 0 && nx < engine.size && ny >= 0 && ny < engine.size) {
+                let nIdx = ny * engine.size + nx;
+                if ((engine.revealed[nIdx] && engine.mines[nIdx]) || knownMines.has(nIdx)) {
+                  mineCount++;
+                } else if (!engine.revealed[nIdx] && !knownSafe.has(nIdx)) {
+                  unrevNeighbors.push(nIdx);
+                }
+              }
+            }
+          }
+          let req = engine.numbers[i] - mineCount;
+          if (req === unrevNeighbors.length && req > 0) {
+            unrevNeighbors.forEach(u => { knownMines.add(u); unrevealed.delete(u); });
+            changed = true;
+          } else if (req === 0 && unrevNeighbors.length > 0) {
+            unrevNeighbors.forEach(u => { knownSafe.add(u); unrevealed.delete(u); });
+            changed = true;
+          }
+        }
+      }
+    }
+
+    for (let u of knownMines) aiProbabilities[u] = 1.0;
+    for (let u of knownSafe) aiProbabilities[u] = 0.0;
+
+    let dynamicRemainingMines = totalRemainingMines - knownMines.size;
+    let constraints = [];
+    let frontierSet = new Set();
+
     for (let i = 0; i < totalCells; i++) {
       if (engine.revealed[i] && engine.numbers[i] > 0 && !engine.mines[i]) {
-        let unrevNeighbors = [];
-        let mineCount = 0;
         let x = i % engine.size, y = Math.floor(i / engine.size);
+        let uncertain = [];
+        let mineCount = 0;
         for (let dy = -1; dy <= 1; dy++) {
           for (let dx = -1; dx <= 1; dx++) {
             if (dx === 0 && dy === 0) continue;
@@ -422,322 +615,268 @@ function calculateAIProbabilities() {
               if ((engine.revealed[nIdx] && engine.mines[nIdx]) || knownMines.has(nIdx)) {
                 mineCount++;
               } else if (!engine.revealed[nIdx] && !knownSafe.has(nIdx)) {
-                unrevNeighbors.push(nIdx);
+                uncertain.push(nIdx);
+                frontierSet.add(nIdx);
               }
             }
           }
         }
-        let req = engine.numbers[i] - mineCount;
-        if (req === unrevNeighbors.length && req > 0) {
-          unrevNeighbors.forEach(u => { knownMines.add(u); unrevealed.delete(u); });
-          changed = true;
-        } else if (req === 0 && unrevNeighbors.length > 0) {
-          unrevNeighbors.forEach(u => { knownSafe.add(u); unrevealed.delete(u); });
-          changed = true;
+        if (uncertain.length > 0) {
+          constraints.push({ cells: uncertain, req: engine.numbers[i] - mineCount });
         }
       }
     }
-  }
 
-  // 寫入 100% 和 0% 機率
-  for (let u of knownMines) aiProbabilities[u] = 1.0;
-  for (let u of knownSafe) aiProbabilities[u] = 0.0;
-
-  let dynamicRemainingMines = totalRemainingMines - knownMines.size;
-  let constraints = [];
-  let frontierSet = new Set();
-
-  // 階段二：建立限制條件 (Constraints)
-  for (let i = 0; i < totalCells; i++) {
-    if (engine.revealed[i] && engine.numbers[i] > 0 && !engine.mines[i]) {
-      let x = i % engine.size, y = Math.floor(i / engine.size);
-      let uncertain = [];
-      let mineCount = 0;
-      for (let dy = -1; dy <= 1; dy++) {
-        for (let dx = -1; dx <= 1; dx++) {
-          if (dx === 0 && dy === 0) continue;
-          let nx = x + dx, ny = y + dy;
-          if (nx >= 0 && nx < engine.size && ny >= 0 && ny < engine.size) {
-            let nIdx = ny * engine.size + nx;
-            if ((engine.revealed[nIdx] && engine.mines[nIdx]) || knownMines.has(nIdx)) {
-              mineCount++;
-            } else if (!engine.revealed[nIdx] && !knownSafe.has(nIdx)) {
-              uncertain.push(nIdx);
-              frontierSet.add(nIdx);
-            }
-          }
-        }
-      }
-      if (uncertain.length > 0) {
-        constraints.push({ cells: uncertain, req: engine.numbers[i] - mineCount });
-      }
-    }
-  }
-
-  let unknownCells = [];
-  for (let u of unrevealed) {
-    if (!frontierSet.has(u)) unknownCells.push(u);
-  }
-
-  let isDpSuccess = false;
-
-  if (constraints.length > 0) {
-    // 階段三：高階區域劃分 (Region Building) —— 解決罷工的核心！
-    let cellToConstraints = new Map();
-    frontierSet.forEach(c => cellToConstraints.set(c, []));
-    constraints.forEach((con, cIdx) => {
-      con.cells.forEach(c => cellToConstraints.get(c).push(cIdx));
-    });
-
-    // 將受到「完全相同限制」的格子打包成一個 Region
-    let regionsMap = new Map();
-    frontierSet.forEach(c => {
-      let sig = cellToConstraints.get(c).sort((a, b) => a - b).join(',');
-      if (!regionsMap.has(sig)) {
-        regionsMap.set(sig, { cells: [], constraints: cellToConstraints.get(c) });
-      }
-      regionsMap.get(sig).cells.push(c);
-    });
-
-    let regions = Array.from(regionsMap.values());
-    let constraintToRegions = Array(constraints.length).fill().map(() => []);
-    regions.forEach((reg, rIdx) => {
-      reg.constraints.forEach(cIdx => constraintToRegions[cIdx].push(rIdx));
-    });
-
-    // 尋找互相獨立的區塊 (Connected Components)
-    let adj = Array(regions.length).fill().map(() => []);
-    constraints.forEach((con, cIdx) => {
-      let regs = constraintToRegions[cIdx];
-      for (let i = 0; i < regs.length; i++) {
-        for (let j = i + 1; j < regs.length; j++) {
-          adj[regs[i]].push(regs[j]);
-          adj[regs[j]].push(regs[i]);
-        }
-      }
-    });
-
-    let visited = Array(regions.length).fill(false);
-    let components = [];
-    for (let i = 0; i < regions.length; i++) {
-      if (!visited[i]) {
-        let compRegs = [];
-        let q = [i];
-        visited[i] = true;
-        while (q.length > 0) {
-          let curr = q.shift();
-          compRegs.push(curr);
-          for (let nxt of adj[curr]) {
-            if (!visited[nxt]) {
-              visited[nxt] = true;
-              q.push(nxt);
-            }
-          }
-        }
-        components.push(compRegs);
-      }
+    let unknownCells = [];
+    for (let u of unrevealed) {
+      if (!frontierSet.has(u)) unknownCells.push(u);
     }
 
-    let componentResults = [];
-    let globalAbort = false;
+    let isDpSuccess = false;
 
-    // 階段四：對 Region 進行動態規劃與回溯
-    for (let compRegs of components) {
-      if (globalAbort) break;
+    if (constraints.length > 0) {
+      let cellToConstraints = new Map();
+      frontierSet.forEach(c => cellToConstraints.set(c, []));
+      constraints.forEach((con, cIdx) => {
+        con.cells.forEach(c => cellToConstraints.get(c).push(cIdx));
+      });
 
-      let compConstraintsSet = new Set();
-      compRegs.forEach(rIdx => regions[rIdx].constraints.forEach(cIdx => compConstraintsSet.add(cIdx)));
-      let compConstraints = Array.from(compConstraintsSet);
-
-      let waysByMines = new Map();
-      let regionMinesWays = new Map();
-      compRegs.forEach(rIdx => regionMinesWays.set(rIdx, new Map()));
-
-      let localAssigned = new Map();
-
-      function backtrackReg(idx) {
-        if (idx === compRegs.length) {
-          // 驗證限制條件是否完美符合
-          for (let cIdx of compConstraints) {
-            let sum = 0;
-            for (let rIdx of constraintToRegions[cIdx]) sum += localAssigned.get(rIdx);
-            if (sum !== constraints[cIdx].req) return;
-          }
-
-          let m = 0;
-          let ways = 1n;
-          // 計算 Region 層級的組合數 (不再窮舉每個 Cell！)
-          for (let rIdx of compRegs) {
-            let assigned = localAssigned.get(rIdx);
-            m += assigned;
-            ways *= getCombinations(regions[rIdx].cells.length, assigned);
-          }
-
-          waysByMines.set(m, (waysByMines.get(m) || 0n) + ways);
-          for (let rIdx of compRegs) {
-            let assigned = localAssigned.get(rIdx);
-            let rMap = regionMinesWays.get(rIdx);
-            rMap.set(m, (rMap.get(m) || 0n) + ways * BigInt(assigned));
-          }
-          return;
+      let regionsMap = new Map();
+      frontierSet.forEach(c => {
+        let sig = cellToConstraints.get(c).sort((a, b) => a - b).join(',');
+        if (!regionsMap.has(sig)) {
+          regionsMap.set(sig, { cells: [], constraints: cellToConstraints.get(c) });
         }
+        regionsMap.get(sig).cells.push(c);
+      });
 
-        let rIdx = compRegs[idx];
-        let maxMines = regions[rIdx].cells.length;
+      let regions = Array.from(regionsMap.values());
+      let constraintToRegions = Array(constraints.length).fill().map(() => []);
+      regions.forEach((reg, rIdx) => {
+        reg.constraints.forEach(cIdx => constraintToRegions[cIdx].push(rIdx));
+      });
 
-        // 嘗試分配 0 ~ N 顆地雷給這個 Region
-        for (let val = 0; val <= maxMines; val++) {
-          localAssigned.set(rIdx, val);
-          let valid = true;
+      let adj = Array(regions.length).fill().map(() => []);
+      constraints.forEach((con, cIdx) => {
+        let regs = constraintToRegions[cIdx];
+        for (let i = 0; i < regs.length; i++) {
+          for (let j = i + 1; j < regs.length; j++) {
+            adj[regs[i]].push(regs[j]);
+            adj[regs[j]].push(regs[i]);
+          }
+        }
+      });
 
-          // 極速剪枝
-          for (let cIdx of regions[rIdx].constraints) {
-            let sumAssigned = 0, maxRemaining = 0;
-            for (let crIdx of constraintToRegions[cIdx]) {
-              if (localAssigned.has(crIdx)) sumAssigned += localAssigned.get(crIdx);
-              else maxRemaining += regions[crIdx].cells.length;
-            }
-            if (sumAssigned > constraints[cIdx].req || sumAssigned + maxRemaining < constraints[cIdx].req) {
-              valid = false; break;
+      let visited = Array(regions.length).fill(false);
+      let components = [];
+      for (let i = 0; i < regions.length; i++) {
+        if (!visited[i]) {
+          let compRegs = [];
+          let q = [i];
+          visited[i] = true;
+          while (q.length > 0) {
+            let curr = q.shift();
+            compRegs.push(curr);
+            for (let nxt of adj[curr]) {
+              if (!visited[nxt]) {
+                visited[nxt] = true;
+                q.push(nxt);
+              }
             }
           }
-
-          if (valid) backtrackReg(idx + 1);
-          localAssigned.delete(rIdx);
+          components.push(compRegs);
         }
       }
 
-      backtrackReg(0);
+      let componentResults = [];
+      let globalAbort = false;
 
-      if (waysByMines.size === 0) {
-        globalAbort = true; // 出現嚴重邏輯矛盾
-        break; 
-      }
-      componentResults.push({ waysByMines, regionMinesWays });
-    }
+      for (let compRegs of components) {
+        if (globalAbort) break;
 
-    if (!globalAbort) {
-      let N = componentResults.length;
-      let prefixDp = [new Map([[0, 1n]])];
+        let compConstraintsSet = new Set();
+        compRegs.forEach(rIdx => regions[rIdx].constraints.forEach(cIdx => compConstraintsSet.add(cIdx)));
+        let compConstraints = Array.from(compConstraintsSet);
 
-      for (let i = 0; i < N; i++) {
-        let nextDp = new Map();
-        for (let [m1, w1] of prefixDp[i].entries()) {
-          for (let [m2, w2] of componentResults[i].waysByMines.entries()) {
-            let total = m1 + m2;
-            nextDp.set(total, (nextDp.get(total) || 0n) + w1 * w2);
+        let waysByMines = new Map();
+        let regionMinesWays = new Map();
+        compRegs.forEach(rIdx => regionMinesWays.set(rIdx, new Map()));
+
+        let localAssigned = new Map();
+
+        function backtrackReg(idx) {
+          if (idx === compRegs.length) {
+            for (let cIdx of compConstraints) {
+              let sum = 0;
+              for (let rIdx of constraintToRegions[cIdx]) sum += localAssigned.get(rIdx);
+              if (sum !== constraints[cIdx].req) return;
+            }
+
+            let m = 0;
+            let ways = 1n;
+            for (let rIdx of compRegs) {
+              let assigned = localAssigned.get(rIdx);
+              m += assigned;
+              ways *= getCombinations(regions[rIdx].cells.length, assigned);
+            }
+
+            waysByMines.set(m, (waysByMines.get(m) || 0n) + ways);
+            for (let rIdx of compRegs) {
+              let assigned = localAssigned.get(rIdx);
+              let rMap = regionMinesWays.get(rIdx);
+              rMap.set(m, (rMap.get(m) || 0n) + ways * BigInt(assigned));
+            }
+            return;
+          }
+
+          let rIdx = compRegs[idx];
+          let maxMines = regions[rIdx].cells.length;
+
+          for (let val = 0; val <= maxMines; val++) {
+            localAssigned.set(rIdx, val);
+            let valid = true;
+
+            for (let cIdx of regions[rIdx].constraints) {
+              let sumAssigned = 0, maxRemaining = 0;
+              for (let crIdx of constraintToRegions[cIdx]) {
+                if (localAssigned.has(crIdx)) sumAssigned += localAssigned.get(crIdx);
+                else maxRemaining += regions[crIdx].cells.length;
+              }
+              if (sumAssigned > constraints[cIdx].req || sumAssigned + maxRemaining < constraints[cIdx].req) {
+                valid = false; break;
+              }
+            }
+
+            if (valid) backtrackReg(idx + 1);
+            localAssigned.delete(rIdx);
           }
         }
-        prefixDp.push(nextDp);
-      }
 
-      let suffixDp = Array(N + 1);
-      suffixDp[N] = new Map([[0, 1n]]);
-      for (let i = N - 1; i >= 0; i--) {
-        let nextDp = new Map();
-        for (let [m1, w1] of suffixDp[i + 1].entries()) {
-          for (let [m2, w2] of componentResults[i].waysByMines.entries()) {
-            let total = m1 + m2;
-            nextDp.set(total, (nextDp.get(total) || 0n) + w1 * w2);
-          }
+        backtrackReg(0);
+
+        if (waysByMines.size === 0) {
+          globalAbort = true; 
+          break; 
         }
-        suffixDp[i] = nextDp;
+        componentResults.push({ waysByMines, regionMinesWays });
       }
 
-      let finalDp = prefixDp[N];
-      let totalValidBoards = 0n;
-      let unknownSize = unknownCells.length;
-
-      for (let [m, count] of finalDp.entries()) {
-        let remain = dynamicRemainingMines - m;
-        if (remain >= 0 && remain <= unknownSize) {
-          totalValidBoards += count * getCombinations(unknownSize, remain);
-        }
-      }
-
-      // 容錯防禦：如果因為遊戲計分狀態出錯導致全局地雷數對不上
-      // 我們轉為「忽略總數限制 (Ignore Global Limit)」，優先保障局部準確度！
-      let ignoreGlobalLimit = false;
-      if (totalValidBoards === 0n) {
-        ignoreGlobalLimit = true;
-        for (let [m, count] of finalDp.entries()) totalValidBoards += count;
-      }
-
-      if (totalValidBoards > 0n) {
-        isDpSuccess = true;
+      if (!globalAbort) {
+        let N = componentResults.length;
+        let prefixDp = [new Map([[0, 1n]])];
 
         for (let i = 0; i < N; i++) {
-          let comp = componentResults[i];
-          let otherDp = new Map();
+          let nextDp = new Map();
           for (let [m1, w1] of prefixDp[i].entries()) {
-            for (let [m2, w2] of suffixDp[i + 1].entries()) {
-              let m = m1 + m2;
-              otherDp.set(m, (otherDp.get(m) || 0n) + w1 * w2);
+            for (let [m2, w2] of componentResults[i].waysByMines.entries()) {
+              let total = m1 + m2;
+              nextDp.set(total, (nextDp.get(total) || 0n) + w1 * w2);
             }
           }
+          prefixDp.push(nextDp);
+        }
 
-          for (let [rIdx, rWaysMap] of comp.regionMinesWays.entries()) {
-            let regMinesWaysSum = 0n;
-            for (let [m_comp, w_comp] of rWaysMap.entries()) {
-              for (let [m_other, w_other] of otherDp.entries()) {
-                let m_total = m_comp + m_other;
-                if (!ignoreGlobalLimit) {
-                  let remain = dynamicRemainingMines - m_total;
-                  if (remain >= 0 && remain <= unknownSize) {
-                    regMinesWaysSum += w_comp * w_other * getCombinations(unknownSize, remain);
-                  }
-                } else {
-                  regMinesWaysSum += w_comp * w_other;
-                }
-              }
+        let suffixDp = Array(N + 1);
+        suffixDp[N] = new Map([[0, 1n]]);
+        for (let i = N - 1; i >= 0; i--) {
+          let nextDp = new Map();
+          for (let [m1, w1] of suffixDp[i + 1].entries()) {
+            for (let [m2, w2] of componentResults[i].waysByMines.entries()) {
+              let total = m1 + m2;
+              nextDp.set(total, (nextDp.get(total) || 0n) + w1 * w2);
             }
-            
-            let expectedMinesInRegion = Number((regMinesWaysSum * 100000n) / totalValidBoards) / 100000;
-            let cellProb = expectedMinesInRegion / regions[rIdx].cells.length;
-            for (let cIdx of regions[rIdx].cells) aiProbabilities[cIdx] = cellProb;
+          }
+          suffixDp[i] = nextDp;
+        }
+
+        let finalDp = prefixDp[N];
+        let totalValidBoards = 0n;
+        let unknownSize = unknownCells.length;
+
+        for (let [m, count] of finalDp.entries()) {
+          let remain = dynamicRemainingMines - m;
+          if (remain >= 0 && remain <= unknownSize) {
+            totalValidBoards += count * getCombinations(unknownSize, remain);
           }
         }
 
-        if (unknownSize > 0) {
-          if (!ignoreGlobalLimit) {
-            let expectedUnknownWays = 0n;
-            for (let [m_total, count] of finalDp.entries()) {
-              let remain = dynamicRemainingMines - m_total;
-              if (remain >= 0 && remain <= unknownSize) {
-                expectedUnknownWays += count * getCombinations(unknownSize, remain) * BigInt(remain);
+        let ignoreGlobalLimit = false;
+        if (totalValidBoards === 0n) {
+          ignoreGlobalLimit = true;
+          for (let [m, count] of finalDp.entries()) totalValidBoards += count;
+        }
+
+        if (totalValidBoards > 0n) {
+          isDpSuccess = true;
+
+          for (let i = 0; i < N; i++) {
+            let comp = componentResults[i];
+            let otherDp = new Map();
+            for (let [m1, w1] of prefixDp[i].entries()) {
+              for (let [m2, w2] of suffixDp[i + 1].entries()) {
+                let m = m1 + m2;
+                otherDp.set(m, (otherDp.get(m) || 0n) + w1 * w2);
               }
             }
-            let unkProb = Number((expectedUnknownWays * 100000n) / (totalValidBoards * BigInt(unknownSize))) / 100000;
-            for (let u of unknownCells) aiProbabilities[u] = unkProb;
-          } else {
-            // 如果全局錯亂，未知區域我們就保守歸零或不顯示
-            for (let u of unknownCells) aiProbabilities[u] = 0.0;
+
+            for (let [rIdx, rWaysMap] of comp.regionMinesWays.entries()) {
+              let regMinesWaysSum = 0n;
+              for (let [m_comp, w_comp] of rWaysMap.entries()) {
+                for (let [m_other, w_other] of otherDp.entries()) {
+                  let m_total = m_comp + m_other;
+                  if (!ignoreGlobalLimit) {
+                    let remain = dynamicRemainingMines - m_total;
+                    if (remain >= 0 && remain <= unknownSize) {
+                      regMinesWaysSum += w_comp * w_other * getCombinations(unknownSize, remain);
+                    }
+                  } else {
+                    regMinesWaysSum += w_comp * w_other;
+                  }
+                }
+              }
+              
+              let expectedMinesInRegion = Number((regMinesWaysSum * 100000n) / totalValidBoards) / 100000;
+              let cellProb = expectedMinesInRegion / regions[rIdx].cells.length;
+              for (let cIdx of regions[rIdx].cells) aiProbabilities[cIdx] = cellProb;
+            }
+          }
+
+          if (unknownSize > 0) {
+            if (!ignoreGlobalLimit) {
+              let expectedUnknownWays = 0n;
+              for (let [m_total, count] of finalDp.entries()) {
+                let remain = dynamicRemainingMines - m_total;
+                if (remain >= 0 && remain <= unknownSize) {
+                  expectedUnknownWays += count * getCombinations(unknownSize, remain) * BigInt(remain);
+                }
+              }
+              let unkProb = Number((expectedUnknownWays * 100000n) / (totalValidBoards * BigInt(unknownSize))) / 100000;
+              for (let u of unknownCells) aiProbabilities[u] = unkProb;
+            } else {
+              for (let u of unknownCells) aiProbabilities[u] = 0.0;
+            }
           }
         }
       }
+    } else {
+      isDpSuccess = true;
+      let p = unknownCells.length > 0 ? Math.min(1.0, Math.max(0, dynamicRemainingMines / unknownCells.length)) : 0;
+      for (let u of unknownCells) aiProbabilities[u] = p;
     }
-  } else {
-    // 遊戲開局完全沒有提示的狀態
-    isDpSuccess = true;
-    let p = unknownCells.length > 0 ? Math.min(1.0, Math.max(0, dynamicRemainingMines / unknownCells.length)) : 0;
-    for (let u of unknownCells) aiProbabilities[u] = p;
-  }
 
-  // 極限備用保護 (只在發生超級異常時觸發)
-  if (!isDpSuccess) {
-    let active = [...frontierSet, ...unknownCells];
-    let p = active.length > 0 ? Math.min(1.0, Math.max(0, dynamicRemainingMines / active.length)) : 0;
-    for (let u of active) aiProbabilities[u] = p;
-  }
+    if (!isDpSuccess) {
+      let active = [...frontierSet, ...unknownCells];
+      let p = active.length > 0 ? Math.min(1.0, Math.max(0, dynamicRemainingMines / active.length)) : 0;
+      for (let u of active) aiProbabilities[u] = p;
+    }
 
-  // 確保 100% 和 0% 不受浮點誤差干擾
-  for (let i = 0; i < totalCells; i++) {
-    if (!engine.revealed[i] && aiProbabilities[i] !== null) {
-      if (aiProbabilities[i] > 0.999) aiProbabilities[i] = 1.0;
-      if (aiProbabilities[i] < 0.001) aiProbabilities[i] = 0.0;
+    for (let i = 0; i < totalCells; i++) {
+      if (!engine.revealed[i] && aiProbabilities[i] !== null) {
+        if (aiProbabilities[i] > 0.999) aiProbabilities[i] = 1.0;
+        if (aiProbabilities[i] < 0.001) aiProbabilities[i] = 0.0;
+      }
     }
   }
-}
 
     const mapSizeInput = document.getElementById('mapSize');
     const mineCountInput = document.getElementById('mineCount');
@@ -816,7 +955,7 @@ function calculateAIProbabilities() {
     let myRoomId = null;
 
     let players = { A: { name: 'Player A', color: '#3b82f6' }, B: { name: 'Player B', color: '#ef4444' } };
-    let engine = { size: 12, minesCount: 39, mines: [], numbers: [], revealed: [], owners: [], scoreA: 0, scoreB: 0, turn: 'A', timeMode: 'standard', timeA: 60, timeB: 60, lastMove: null };
+    let engine = { size: 12, minesCount: 39, aiMode: 'none', mines: [], numbers: [], revealed: [], owners: [], scoreA: 0, scoreB: 0, turn: 'A', timeMode: 'standard', timeA: 60, timeB: 60, lastMove: null };
     let clientView = null;
     let timerInterval = null;
 
@@ -895,7 +1034,10 @@ function calculateAIProbabilities() {
     }, 5000);
 
     function startBroadcastingLobby() {
-      const payload = { action: 'add', id: myRoomId, hostName: myNameInput.value || "Host", size: engine.size, mines: engine.minesCount, timeMode: engine.timeMode };
+      const payload = { 
+        action: 'add', id: myRoomId, hostName: myNameInput.value || "Host", 
+        size: engine.size, mines: engine.minesCount, timeMode: engine.timeMode, aiMode: engine.aiMode 
+      };
       mqttClient.publish(lobbyTopic, JSON.stringify(payload));
       broadcastInterval = setInterval(() => { mqttClient.publish(lobbyTopic, JSON.stringify(payload)); }, 4000);
     }
@@ -927,6 +1069,7 @@ function calculateAIProbabilities() {
       }
       
       const timeModeMap = { 'fast': '⚡ 快速', 'standard': '⏳ 標準', 'slow': '🐢 慢速' };
+      const aiModeMap = { 'none': '🚫', '1': '💡1次', '3': '💡3次', 'unlimited': '♾️' };
 
       roomIds.forEach(id => {
         const room = activeRooms[id];
@@ -938,10 +1081,11 @@ function calculateAIProbabilities() {
         const safeMines = parseInt(room.mines) || 39; 
         const safeId = escapeHTML(String(room.id)).replace(/'/g, ""); 
         const safeTimeMode = timeModeMap[room.timeMode] || '⏳ 標準';
+        const safeAiMode = aiModeMap[room.aiMode] || '🚫';
 
         card.innerHTML = `
           <div class="room-info">🎮 ${safeHostName} 的房間</div>
-          <div class="room-settings">📐 ${safeSize}x${safeSize} | 💣 ${safeMines} 顆 | ${safeTimeMode}</div>
+          <div class="room-settings">📐 ${safeSize}x${safeSize} | 💣 ${safeMines} 顆 | ${safeTimeMode} | AI: ${safeAiMode}</div>
           <button class="btn-join-room" onclick="joinGame('${safeId}')">加入對戰</button>
         `;
         roomListContainer.appendChild(card);
@@ -955,7 +1099,7 @@ function calculateAIProbabilities() {
     }
 
     function tickTime() {
-      if (!gameActive || !isHost || engine.timeMode === 'none') return; // 練習模式完全關閉時間計算
+      if (!gameActive || !isHost || engine.timeMode === 'none') return; 
       
       engine['time' + engine.turn]--;
       if (engine['time' + engine.turn] <= 0) {
@@ -1026,8 +1170,9 @@ function calculateAIProbabilities() {
       });
     }
 
-    function handleNetworkData(data) {
+ function handleNetworkData(data) {
       lastHeartbeatTime = Date.now();
+
       if (data.type === 'PING') return; 
 
       if (data.type === 'PROFILE') {
@@ -1048,16 +1193,60 @@ function calculateAIProbabilities() {
       } 
       else if (data.type === 'GAME_SYNC') {
         clientView = data; 
-        if(data.gameActive && !gameActive) {
+        let newlyStarted = data.gameActive && !gameActive;
+        gameActive = data.gameActive; // 修正: 提前更新 gameActive 狀態
+
+        if(newlyStarted) {
+           engine.aiMode = data.aiMode;
+           if (engine.aiMode === '1') myAiUsesLeft = 1;
+           else if (engine.aiMode === '3') myAiUsesLeft = 3;
+           else if (engine.aiMode === 'unlimited') myAiUsesLeft = 999;
+           else myAiUsesLeft = 0;
+           
            document.body.classList.add('game-on');
            hideOverlay();
+           updateAIBtnUI(); // 此時 gameActive 為 true，按鈕可正確顯示
         }
-        gameActive = data.gameActive;
+        
+        // 1. 同步玩家分數 (解決客機比分落後無法開啟 AI 的問題)
         players.A.score = data.scoreA; players.B.score = data.scoreB;
+        engine.scoreA = data.scoreA;
+        engine.scoreB = data.scoreB; 
+
+        // ----------------- 2. 同步地圖數據 (解決客機 AI 算法機率計算錯誤的問題) -----------------
+        engine.size = data.size;
+        let total = data.size * data.size;
+        
+        // 確保客機引擎有對應長度的地圖陣列
+        engine.revealed = Array(total).fill(false);
+        engine.mines = Array(total).fill(false);
+        engine.numbers = Array(total).fill(0);
+        engine.owners = Array(total).fill(null);
+
+        // 將房主傳來的地圖格子狀態，一格一格塞入客機引擎中，讓 AI 演算法有資料可以算
+        if (data.cells) {
+          for (let i = 0; i < total; i++) {
+            let c = data.cells[i];
+            if (c && c.r) { // 如果該格子已經被翻開
+              engine.revealed[i] = true;
+              engine.mines[i] = c.m;    // 是否是地雷
+              engine.numbers[i] = c.n;  // 周遭地雷數字
+              engine.owners[i] = c.o;   // 佔領者
+            }
+          }
+        }
+        // 修改後：
         engine.timeMode = data.timeMode; engine.timeA = data.timeA; engine.timeB = data.timeB;
         engine.minesCount = data.minesCount; 
+        
+        // 客機收到新盤面同步後，若 AI 開啟則立即重算機率
+        if (isAIToggledOn && gameActive) {
+          calculateAIProbabilities();
+        }
+
         updateHUD(data.turn); drawBoard();
       }
+
       else if (data.type === 'TIME_SYNC') {
         engine.timeA = data.timeA; engine.timeB = data.timeB;
         updateHUD(clientView ? clientView.turn : 'A');
@@ -1073,7 +1262,7 @@ function calculateAIProbabilities() {
         if(timerInterval) clearInterval(timerInterval); 
         showVictory(data.winner, data.reason);
       }
-    }
+}
 
     btnCancel.addEventListener('click', () => {
       stopBroadcastingLobby();
@@ -1100,6 +1289,7 @@ function calculateAIProbabilities() {
       engine.size = parseInt(document.getElementById('mapSize').value);
       engine.minesCount = parseInt(document.getElementById('mineCount').value);
       engine.timeMode = document.getElementById('timeMode').value;
+      engine.aiMode = document.getElementById('aiModeSelect').value;
       
       const isPrivate = document.getElementById('roomPrivacy').value === 'private';
       myRoomId = isPrivate ? generateUniqueCode() : Math.random().toString(36).substring(2, 10).toUpperCase();
@@ -1107,7 +1297,17 @@ function calculateAIProbabilities() {
       btnCreate.style.display = 'none'; btnCancel.style.display = 'block'; 
       statusText.innerText = "建立房間中...";
 
-      peer = new Peer(myRoomId);
+      const peerConfig = {
+        config: {
+          'iceServers': [
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:stun1.l.google.com:19302' },
+            { urls: 'stun:stun2.l.google.com:19302' }
+          ]
+        }
+      };
+      peer = new Peer(myRoomId, peerConfig);
+
       peer.on('open', (id) => {
         if (isPrivate) {
           statusText.innerText = "請將此代碼交給對手";
@@ -1133,12 +1333,38 @@ function calculateAIProbabilities() {
       players.B = { name: myNameInput.value || "Guest", color: myColorInput.value };
       btnCreate.disabled = true; statusText.innerText = "連線中...";
       
-      peer = new Peer();
+      const peerConfig = {
+        config: {
+          'iceServers': [
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:stun1.l.google.com:19302' },
+            { urls: 'stun:stun2.l.google.com:19302' }
+          ]
+        }
+      };
+      peer = new Peer(peerConfig);
+
+      let joinTimeout = setTimeout(() => {
+        if (!conn || !conn.open) {
+          alert("連線建立失敗 (超時)！\n這通常是因為您或對手的網路環境 (如公司/學校防火牆或部分手機 4G) 阻擋了 P2P 連線。");
+          location.reload();
+        }
+      }, 12000);
+
       peer.on('open', () => {
-        const connection = peer.connect(targetId);
+        const connection = peer.connect(targetId, { reliable: true });
         setupConnection(connection);
+        
+        connection.on('open', () => {
+          clearTimeout(joinTimeout); 
+        });
       });
-      peer.on('error', (err) => { alert("無法連線，代碼錯誤或已關閉。"); location.reload(); });
+      
+      peer.on('error', (err) => { 
+        clearTimeout(joinTimeout);
+        alert("無法連線，代碼錯誤或對手已關閉房間。"); 
+        location.reload(); 
+      });
     }
 
     function startGameEngine() {
@@ -1151,10 +1377,14 @@ function calculateAIProbabilities() {
       if (engine.timeMode === 'fast') baseTime = 20;
       else if (engine.timeMode === 'standard') baseTime = 60;
       else if (engine.timeMode === 'slow') baseTime = 120;
-      // 若為 none 則為 0，但在 tickTime 裡會被阻擋，不用擔心
       
       engine.timeA = baseTime; engine.timeB = baseTime;
       comboCount = 0; comboPlayer = null; 
+
+      if (engine.aiMode === '1') myAiUsesLeft = 1;
+      else if (engine.aiMode === '3') myAiUsesLeft = 3;
+      else if (engine.aiMode === 'unlimited') myAiUsesLeft = 999;
+      else myAiUsesLeft = 0;
 
       engine.turn = Math.random() < 0.5 ? 'A' : 'B';
       engine.lastMove = null; 
@@ -1188,6 +1418,7 @@ function calculateAIProbabilities() {
 
       if (isPracticeMode && isAIToggledOn) calculateAIProbabilities();
 
+      updateAIBtnUI();
       updateHUD(engine.turn); drawBoard(); syncToGuest(); hideOverlay();
     }
 
@@ -1236,8 +1467,7 @@ function calculateAIProbabilities() {
         engine.turn = (playerRole === 'A') ? 'B' : 'A';
       }
 
-      // 只有在開啟狀態下才重新計算，完全節省 CPU
-      if (isPracticeMode && isAIToggledOn && gameActive) {
+     if (isAIToggledOn && gameActive) {
         calculateAIProbabilities();
       }
 
@@ -1276,6 +1506,7 @@ function calculateAIProbabilities() {
         type: 'GAME_SYNC', gameActive: gameActive, size: engine.size, minesCount: engine.minesCount,
         scoreA: engine.scoreA, scoreB: engine.scoreB, turn: engine.turn, 
         timeMode: engine.timeMode, timeA: engine.timeA, timeB: engine.timeB,
+        aiMode: engine.aiMode, 
         lastMove: engine.lastMove,
         cells: cells
       });
@@ -1291,7 +1522,15 @@ function calculateAIProbabilities() {
       const x = Math.floor((e.clientX - rect.left) / (rect.width / BOARD_PIXEL) / cellSize);
       const y = Math.floor((e.clientY - rect.top) / (rect.height / BOARD_PIXEL) / cellSize);
 
-      // 本機練習模式下，不論誰的回合都可以直接點擊，實現熱座雙人對戰
+      // 檢查是否需自動關閉 AI (點擊畫面即消耗次數並關閉)
+      if (isAIToggledOn && !isPracticeMode && (engine.aiMode === '1' || engine.aiMode === '3')) {
+        isAIToggledOn = false;
+        btnToggleAI.classList.remove('active');
+        aiProbabilities = Array(engine.size * engine.size).fill(null);
+        updateAIBtnUI();
+        drawBoard();
+      }
+
       if (isPracticeMode) {
         processClick(x, y, engine.turn);
       } else if (isHost) {
@@ -1315,7 +1554,7 @@ function calculateAIProbabilities() {
       ctx.closePath();
     }
 
-       function drawBoard() {
+    function drawBoard() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       const grid = isHost ? engine.size : (clientView ? clientView.size : 12);
       if (!grid) return;
@@ -1352,9 +1591,7 @@ function calculateAIProbabilities() {
           const radius = Math.max(3, cw * 0.15); 
 
           if (!rev) {
-            // 繪製 AI 機率 (純白背景 + 勝率動態顏色與字體大小)
-            if (isPracticeMode && isAIToggledOn && aiProbabilities[idx] !== null && gameActive) {
-              // 1. 純白背景與極簡邊框
+            if (isAIToggledOn && aiProbabilities[idx] !== null && gameActive) {
               ctx.fillStyle = '#ffffff';
               drawRoundedRect(ctx, cx, cy, cw, ch, radius);
               ctx.fill();
@@ -1364,46 +1601,34 @@ function calculateAIProbabilities() {
               drawRoundedRect(ctx, cx, cy, cw, ch, radius);
               ctx.stroke();
 
-              // 2. 機率與顏色、大小邏輯
               let prob = aiProbabilities[idx];
               let percentVal = Math.round(prob * 100);
               let textColor = '';
 
-              // --- 顏色深淺處理 (已修正方向) ---
               if (percentVal < 50) {
-                // 小於 50%：黑色。勝率越大 (接近49) 越黑，勝率越小 (接近0) 越淺
-                // 讓 0% 透明度為 0.3，49% 透明度接近 1.0
                 let alpha = 0.3 + (percentVal / 50) * 0.7;
                 textColor = `rgba(0, 0, 0, ${alpha})`;
               } else if (percentVal === 50) {
-                // 等於 50%：橙色
                 textColor = '#ff9800'; 
               } else {
-                // 大於 50%：紅色。勝率越大 (接近100) 越紅，越小 (接近51) 越淡
                 let alpha = percentVal / 100;
-                alpha = Math.max(0.3, alpha); // 最低保留 0.3 透明度
+                alpha = Math.max(0.3, alpha); 
                 textColor = `rgba(255, 0, 0, ${alpha})`;
               }
 
-              // --- 字體大小線性處理 ---
-              // 基礎字體大小：格子高度的 40%
               let baseFontSize = ch * 0.40; 
-              // 線性縮放比例：0% -> 0.3倍，100% -> 1.5倍
               let fontScale = 0.3 + (prob * 1.2); 
               let finalFontSize = baseFontSize * fontScale;
 
-              // 3. 渲染數值文字
               ctx.fillStyle = textColor;
               ctx.font = `bold ${finalFontSize}px Arial`;
               ctx.textAlign = 'center'; 
               ctx.textBaseline = 'middle';
               ctx.shadowBlur = 0; 
               
-              // Y 座標微調，確保不同大小的字體都能保持視覺置中
               ctx.fillText(`${percentVal}`, cx + cw/2, cy + ch/2 + (finalFontSize * 0.05));
 
             } else {
-              // 正常遊戲狀態 (未開啟 AI 或無資料時)：原本的玻璃質感漸層
               const grad = ctx.createLinearGradient(cx, cy, cx, cy + ch);
               grad.addColorStop(0, 'rgba(255, 255, 255, 0.85)');
               grad.addColorStop(1, 'rgba(255, 255, 255, 0.3)');
@@ -1423,7 +1648,6 @@ function calculateAIProbabilities() {
             }
 
           } else {
-            // 已翻開格子的繪製
             ctx.fillStyle = 'rgba(255, 255, 255, 0.1)'; 
             drawRoundedRect(ctx, cx, cy, cw, ch, radius);
             ctx.fill();
@@ -1464,7 +1688,6 @@ function calculateAIProbabilities() {
             }
           }
 
-          // 最後一手的特殊標記
           if (isLastMove) {
             ctx.save();
             const pColor = (lastP === 'A') ? players.A.color : players.B.color;
@@ -1527,7 +1750,6 @@ function calculateAIProbabilities() {
       document.getElementById('nameB').innerText = players.B.name;
       document.getElementById('nameB').style.color = players.B.color;
       
-      // 若為練習模式，顯示固定文字
       if (engine.timeMode === 'none') {
         document.getElementById('timeA').innerText = '🛠️ 練習';
         document.getElementById('timeB').innerText = '🛠️ 練習';
@@ -1556,6 +1778,9 @@ function calculateAIProbabilities() {
         document.getElementById('reqA').style.color = players.A.color;
         document.getElementById('reqB').innerText = `再奪${reqBV}個`;
         document.getElementById('reqB').style.color = players.B.color;
+      } else if (!gameActive && (scoreAV > 0 || scoreBV > 0)) {
+        document.getElementById('reqA').innerText = '';
+        document.getElementById('reqB').innerText = '';
       }
 
       const container = document.getElementById('game-container');
@@ -1590,6 +1815,7 @@ function calculateAIProbabilities() {
       clearInterval(heartbeatInterval);
       clearInterval(heartbeatCheckInterval);
       
+      updateAIBtnUI(); // 遊戲結束隱藏 AI
       overlay.classList.remove('hidden');
       const wName = players[winnerCode].name, wColor = players[winnerCode].color;
       
@@ -1597,6 +1823,9 @@ function calculateAIProbabilities() {
       if (reason === 'timeout') {
          const loserName = winnerCode === 'A' ? players.B.name : players.A.name;
          title = `⏳ ${loserName} 超時\n${wName} 獲勝！`;
+      } else if (reason === 'resign') {
+         const loserName = winnerCode === 'A' ? players.B.name : players.A.name;
+         title = `🏳️ ${loserName} 認輸\n${wName} 獲勝！`;
       }
       
       document.getElementById('overlayTitle').innerText = title;
