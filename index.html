@@ -789,7 +789,7 @@ function disablePanels() { ['settingsPanel', 'createPanel', 'lobbyPanel', 'aiPla
           }
       } else if (maxProb > 0.999 && clickProb < 0.999) {
           category = "Missed Mine";
-      } else if (delta > 0.05) {
+      } else if (delta > 0.001) {
           category = "Inaccuracy";
       }
 
