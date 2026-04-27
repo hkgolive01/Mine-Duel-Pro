@@ -3,10 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mine Duel - Duel Mode</title>
+  <title>Mine Duel - Tactical Report Edition</title>
   
   <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
   <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
   <style>
     :root {
@@ -19,124 +21,34 @@
       --turn-color: transparent;
     }
 
-    body {
-      margin: 0; padding: 0; height: 100vh; display: flex;
-      font-family: 'Segoe UI', system-ui, sans-serif;
-      background: var(--bg-gradient); color: var(--text); overflow: hidden;
-      flex-direction: row; 
-    }
-
-    #sidebar {
-      width: 15%; min-width: 290px; height: 100vh;
-      background: var(--glass-bg);
-      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-      border-right: 1px solid var(--glass-border);
-      box-shadow: 4px 0 24px rgba(0, 0, 0, 0.05);
-      padding: 20px; box-sizing: border-box;
-      display: flex; flex-direction: column; gap: 15px; z-index: 10;
-      overflow-y: auto; transition: all 0.5s ease;
-    }
-
-    .sidebar-header {
-      position: relative; display: flex; align-items: center; justify-content: center; width: 100%;
-    }
-
-    #sidebar h1 {
-      margin: 0; font-size: 28px; text-transform: uppercase; text-align: center; font-weight: 900;
-      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-      text-shadow: 0 2px 10px rgba(59, 130, 246, 0.2);
-    }
-
-    .btn-refresh, .btn-sound {
-      position: absolute; top: 50%; transform: translateY(-50%);
-      width: 36px; height: 36px; padding: 0; margin: 0;
-      background: rgba(255, 255, 255, 0.7); border: 1px solid var(--glass-border);
-      border-radius: 50%; font-size: 16px; display: flex; align-items: center; justify-content: center;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.05); cursor: pointer; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-      backdrop-filter: blur(5px); color: #475569;
-    }
-    .btn-refresh { right: 0; }
-    .btn-sound { left: 0; }
+    body { margin: 0; padding: 0; height: 100vh; display: flex; font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg-gradient); color: var(--text); overflow: hidden; flex-direction: row; }
+    #sidebar { width: 15%; min-width: 290px; height: 100vh; background: var(--glass-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-right: 1px solid var(--glass-border); box-shadow: 4px 0 24px rgba(0, 0, 0, 0.05); padding: 20px; box-sizing: border-box; display: flex; flex-direction: column; gap: 15px; z-index: 10; overflow-y: auto; transition: all 0.5s ease; }
+    .sidebar-header { position: relative; display: flex; align-items: center; justify-content: center; width: 100%; }
+    #sidebar h1 { margin: 0; font-size: 28px; text-transform: uppercase; text-align: center; font-weight: 900; background: linear-gradient(135deg, #3b82f6, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-shadow: 0 2px 10px rgba(59, 130, 246, 0.2); }
     
-    .btn-refresh:hover, .btn-sound:hover { 
-      background: #ffffff; 
-      box-shadow: 0 4px 12px rgba(59,130,246,0.2); 
-      color: #3b82f6; border-color: #3b82f6;
-    }
-    .btn-refresh:hover { transform: translateY(-50%) rotate(180deg); }
-    .btn-sound:hover { transform: translateY(-50%) scale(1.1); }
+    .btn-refresh, .btn-sound { position: absolute; top: 50%; transform: translateY(-50%); width: 36px; height: 36px; padding: 0; margin: 0; background: rgba(255, 255, 255, 0.7); border: 1px solid var(--glass-border); border-radius: 50%; font-size: 16px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.05); cursor: pointer; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); backdrop-filter: blur(5px); color: #475569; }
+    .btn-refresh { right: 0; } .btn-sound { left: 0; }
+    .btn-refresh:hover, .btn-sound:hover { background: #ffffff; box-shadow: 0 4px 12px rgba(59,130,246,0.2); color: #3b82f6; border-color: #3b82f6; }
+    .btn-refresh:hover { transform: translateY(-50%) rotate(180deg); } .btn-sound:hover { transform: translateY(-50%) scale(1.1); }
 
-    /* AI 開關按鈕，位置與聲音按鈕完全重疊 */
-    #btnToggleAI {
-      position: absolute; 
-      top: 50%; 
-      transform: translateY(-50%); 
-      left: 0; 
-      width: 36px; 
-      height: 36px; 
-      padding: 0; 
-      margin: 0;
-      background: rgba(255, 255, 255, 0.7); 
-      border: 1px solid var(--glass-border);
-      border-radius: 50%; 
-      font-size: 16px; 
-      display: none; 
-      align-items: center; 
-      justify-content: center;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.05); 
-      cursor: pointer; 
-      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-      backdrop-filter: blur(5px);
-    }
-    
-    #btnToggleAI:hover {
-      background: #ffffff;
-      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2); 
-      transform: translateY(-50%) scale(1.1); 
-    }
+    #btnToggleAI { position: absolute; top: 50%; transform: translateY(-50%); left: 0; width: 36px; height: 36px; padding: 0; margin: 0; background: rgba(255, 255, 255, 0.7); border: 1px solid var(--glass-border); border-radius: 50%; font-size: 16px; display: none; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.05); cursor: pointer; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); backdrop-filter: blur(5px); }
+    #btnToggleAI:hover { background: #ffffff; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2); transform: translateY(-50%) scale(1.1); }
     #btnToggleAI.active { background: #10b981; border-color: #059669; box-shadow: 0 4px 12px rgba(16,185,129,0.4); }
 
-    /* 認輸按鈕樣式 */
-    #btnResign {
-      position: absolute; top: 50%; transform: translateY(-50%); right: 0;
-      width: 36px; height: 36px; padding: 0; margin: 0;
-      background: rgba(255, 255, 255, 0.7); border: 1px solid var(--glass-border);
-      border-radius: 50%; font-size: 16px; display: none; 
-      align-items: center; justify-content: center;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.05); cursor: pointer; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-      backdrop-filter: blur(5px); color: #475569;
-    }
-    #btnResign:hover { 
-      background: #ffffff; 
-      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2); 
-      color: #ef4444; border-color: #ef4444; 
-      transform: translateY(-50%) scale(1.1); 
-    }
+    #btnResign { position: absolute; top: 50%; transform: translateY(-50%); right: 0; width: 36px; height: 36px; padding: 0; margin: 0; background: rgba(255, 255, 255, 0.7); border: 1px solid var(--glass-border); border-radius: 50%; font-size: 16px; display: none; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.05); cursor: pointer; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); backdrop-filter: blur(5px); color: #475569; }
+    #btnResign:hover { background: #ffffff; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2); color: #ef4444; border-color: #ef4444; transform: translateY(-50%) scale(1.1); }
 
-    /* 對戰模式下顯示認輸 */
-    body.game-on #btnResign {
-      display: flex;
-    }
+    #btnExitPractice { position: absolute; top: 50%; transform: translateY(-50%); right: 0; width: 36px; height: 36px; padding: 0; margin: 0; background: rgba(255, 255, 255, 0.7); border: 1px solid var(--glass-border); border-radius: 50%; font-size: 16px; display: none; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.05); cursor: pointer; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); backdrop-filter: blur(5px); color: #475569; }
+    #btnExitPractice:hover { background: #ffffff; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2); color: #10b981; border-color: #10b981; transform: translateY(-50%) scale(1.1); }
 
-    /* 練習模式下隱藏認輸按鈕 */
-    body.game-on.practice-mode #btnResign {
-      display: none !important;
-    }
+    body.game-on:not(.practice-mode) #btnResign { display: flex; } body.game-on.practice-mode #btnExitPractice { display: flex; }
 
-    .panel {
-      background: rgba(255, 255, 255, 0.6); border: 1px solid var(--glass-border);
-      border-radius: 16px; padding: 15px; box-shadow: var(--glass-shadow); transition: opacity 0.3s;
-    }
+    .panel { background: rgba(255, 255, 255, 0.6); border: 1px solid var(--glass-border); border-radius: 16px; padding: 15px; box-shadow: var(--glass-shadow); transition: opacity 0.3s; }
     .panel h3 { margin: 0 0 10px 0; font-size: 16px; color: #1e293b; font-weight: 800;}
 
     body.game-on #sidebar .panel { display: none !important; }
-    body.game-on #sidebar { 
-      justify-content: center; height: auto; min-height: unset; 
-      padding: 5px 10px; margin: 0; background: transparent; border: none; box-shadow: none;
-    }
-    body.game-on .sidebar-header .btn-refresh,
-    body.game-on .sidebar-header .btn-sound { display: none; }
+    body.game-on #sidebar { justify-content: center; height: auto; min-height: unset; padding: 5px 10px; margin: 0; background: transparent; border: none; box-shadow: none; }
+    body.game-on .sidebar-header .btn-refresh, body.game-on .sidebar-header .btn-sound { display: none; }
     body.game-on #sidebar h1 { font-size: 32px; letter-spacing: 2px; }
 
     .player-setup { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
@@ -157,6 +69,8 @@
     .btn-danger:hover { background: linear-gradient(135deg, #dc2626, #ef4444); color: white; }
     .btn-practice { background: linear-gradient(135deg, #10b981, #34d399); color: white; border: none; }
     .btn-practice:hover { background: linear-gradient(135deg, #059669, #10b981); color: white; }
+    .btn-ai { background: linear-gradient(135deg, #8b5cf6, #a78bfa); color: white; border: none; }
+    .btn-ai:hover { background: linear-gradient(135deg, #7c3aed, #8b5cf6); color: white; }
 
     #roomListContainer { max-height: 180px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin-top: 10px; padding-right: 5px; }
     .room-card { background: rgba(255, 255, 255, 0.8); border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px; display: flex; flex-direction: column; gap: 5px; transition: 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
@@ -170,17 +84,10 @@
     .join-manual button { flex: 1; margin: 0; padding: 8px; font-size: 14px; }
     #status { font-size: 14px; text-align: center; margin-top: 10px; color: #10b981; font-weight: bold;}
 
-    /* ================= 主遊戲區 ================= */
     #main-area { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; padding: 10px; box-sizing: border-box;}
     body.game-on #main-area { padding: 5px; }
 
-    #hud {
-      display: flex; align-items: center; justify-content: space-between;
-      background: var(--glass-bg); backdrop-filter: blur(15px); border: 1px solid var(--glass-border);
-      padding: 6px 12px; border-radius: 12px; margin-bottom: 8px; box-shadow: var(--glass-shadow); z-index: 5;
-      width: 100%; max-width: 724px; box-sizing: border-box;
-    }
-
+    #hud { display: flex; align-items: center; justify-content: space-between; background: var(--glass-bg); backdrop-filter: blur(15px); border: 1px solid var(--glass-border); padding: 6px 12px; border-radius: 12px; margin-bottom: 8px; box-shadow: var(--glass-shadow); z-index: 5; width: 100%; max-width: 724px; box-sizing: border-box; }
     .player-col { width: 35%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; overflow: hidden; }
     .score-col { width: 30%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; overflow: hidden; position: relative;}
 
@@ -196,97 +103,88 @@
     .score-small-bottom { font-size: 14px; font-weight: bold; white-space: nowrap;}
     .score-main-row { width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; }
 
-    #game-container { 
-      position: relative; border-radius: 20px; padding: 12px; 
-      background: rgba(255, 255, 255, 0.2); 
-      border: 1px solid rgba(255, 255, 255, 0.6); 
-      box-shadow: 0 15px 35px rgba(0,0,0,0.1), inset 0 0 20px rgba(255,255,255,0.4); 
-      backdrop-filter: blur(25px) saturate(150%);
-      -webkit-backdrop-filter: blur(25px) saturate(150%);
-      transition: border-color 0.3s ease, box-shadow 0.3s ease;
-    }
-
-    body.game-on #game-container {
-      border: 2px solid var(--turn-color);
-      box-shadow: 0 15px 35px rgba(0,0,0,0.1), 0 0 20px var(--turn-color), inset 0 0 15px rgba(255,255,255,0.4);
-    }
-    
+    #game-container { position: relative; border-radius: 20px; padding: 12px; background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(255, 255, 255, 0.6); box-shadow: 0 15px 35px rgba(0,0,0,0.1), inset 0 0 20px rgba(255,255,255,0.4); backdrop-filter: blur(25px) saturate(150%); -webkit-backdrop-filter: blur(25px) saturate(150%); transition: border-color 0.3s ease, box-shadow 0.3s ease; }
+    body.game-on #game-container { border: 2px solid var(--turn-color); box-shadow: 0 15px 35px rgba(0,0,0,0.1), 0 0 20px var(--turn-color), inset 0 0 15px rgba(255,255,255,0.4); }
     canvas { border-radius: 12px; background: transparent; cursor: crosshair; display: block; max-width: 100%; height: auto; }
 
-    @keyframes blink-turn {
-      0%, 49.9% { border-color: var(--turn-color); box-shadow: 0 0 35px var(--turn-color), inset 0 0 25px var(--turn-color); }
-      50%, 100% { border-color: rgba(255,255,255,0.6); box-shadow: 0 15px 35px rgba(0,0,0,0.1), inset 0 0 20px rgba(255,255,255,0.4); }
-    }
+    @keyframes blink-turn { 0%, 49.9% { border-color: var(--turn-color); box-shadow: 0 0 35px var(--turn-color), inset 0 0 25px var(--turn-color); } 50%, 100% { border-color: rgba(255,255,255,0.6); box-shadow: 0 15px 35px rgba(0,0,0,0.1), inset 0 0 20px rgba(255,255,255,0.4); } }
     #game-container.urgent { animation: blink-turn 0.6s infinite; }
 
-    #overlay {
-      position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 16px;
-      background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(12px);
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      z-index: 20; color: #1e293b; text-align: center; transition: opacity 0.3s;
-    }
+    #overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 16px; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(12px); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 20; color: #1e293b; text-align: center; transition: opacity 0.3s; }
     #overlay.hidden { opacity: 0; pointer-events: none; }
     #overlay h2 { font-size: 40px; margin-bottom: 10px; color: #0f172a; font-weight: 900;}
-    #overlay p { font-size: 18px; color: #475569; font-weight: bold; margin-bottom: 20px;}
+    #overlay p { font-size: 18px; color: #475569; font-weight: bold; margin-bottom: 10px;}
     
     #btnHome { width: 200px; font-size: 18px; padding: 12px; background: #1e293b; color: #fff; display: none; margin-top: 10px;}
     #btnHome:hover { background: #0f172a; transform: scale(1.05); }
 
-    ::-webkit-scrollbar { width: 6px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.6); border-radius: 10px; }
+    /* ================= 結算表與 PDF 控制項樣式 ================= */
+    .stats-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 20px; background: rgba(255, 255, 255, 0.95); border-radius: 12px; overflow: hidden; box-shadow: 0 8px 25px rgba(0,0,0,0.1); }
+    .stats-table th, .stats-table td { padding: 12px 15px; border: 1px solid #cbd5e1; text-align: center; }
+    .stats-table th { background: #f1f5f9; font-weight: 900; color: #334155; }
+    .stats-table tr:nth-child(even) { background: #f8fafc; }
 
-    /* ================= 手機版優化區 ================= */
+    ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.6); border-radius: 10px; }
+
+    /* ================= 新版全白 PDF 隱藏模板樣式 ================= */
+    #pdf-container { position: absolute; top: -20000px; left: -20000px; width: 800px; font-family: 'Segoe UI', Arial, sans-serif; display: flex; flex-direction: column; }
+    .pdf-page { width: 800px; height: 1131px; position: relative; padding: 40px; box-sizing: border-box; overflow: hidden; background: #ffffff; color: #1e293b; }
+    
+    .pdf-title { font-size: 42px; font-weight: 900; text-transform: uppercase; text-align: center; letter-spacing: 2px; color: #38bdf8; margin-bottom: 5px; }
+    .pdf-subtitle { font-size: 18px; text-align: center; font-weight: bold; opacity: 0.7; margin-bottom: 30px; letter-spacing: 1px; border-bottom: 2px solid rgba(0,0,0,0.1); color: #475569; padding-bottom: 15px;}
+    
+    .vs-container { display: flex; justify-content: space-between; gap: 20px; margin-bottom: 20px; }
+    .vs-col { flex: 1; border-radius: 16px; padding: 25px; box-sizing: border-box; }
+    .vs-col.pA { background: linear-gradient(180deg, rgba(59,130,246,0.05) 0%, rgba(255,255,255,0) 100%); border-top: 4px solid #3b82f6; }
+    .vs-col.pB { background: linear-gradient(180deg, rgba(239,68,68,0.05) 0%, rgba(255,255,255,0) 100%); border-top: 4px solid #ef4444; }
+    
+    .vs-name { font-size: 28px; font-weight: 900; text-align: center; margin-bottom: 10px; }
+    .vs-score { font-size: 60px; font-family: monospace; font-weight: bold; text-align: center; margin-bottom: 30px; }
+    
+    .stat-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px dashed rgba(0,0,0,0.1); }
+    .stat-row:last-child { border-bottom: none; }
+    .stat-label { font-size: 16px; font-weight: bold; color: #64748b; }
+    .stat-val { font-size: 22px; font-weight: bold; font-family: monospace; color: #1e293b; }
+    
+    /* 戰術錯題本樣式 */
+    .tactical-header { border-bottom: 2px solid rgba(0,0,0,0.1); padding-bottom: 15px; margin-bottom: 30px; }
+    .tactical-title { font-size: 32px; font-weight: 900; }
+    .tactical-desc { font-size: 20px; color: #d97706; margin-top: 10px; line-height: 1.5; }
+    .tactical-img-container { display: flex; justify-content: center; margin-top: 20px; }
+    .tactical-img { width: 600px; height: 600px; border-radius: 12px; border: 3px solid rgba(0,0,0,0.1); box-shadow: 0 10px 30px rgba(0,0,0,0.15); }
+    .legend-box { display: flex; justify-content: center; gap: 30px; margin-top: 20px; font-size: 18px; font-weight: bold; }
+    .legend-item { display: flex; align-items: center; gap: 10px; }
+    .legend-color { width: 24px; height: 24px; border-radius: 4px; }
+    
     @media (max-aspect-ratio: 1/1) {
-      body { 
-        height: auto; 
-        min-height: 100vh; 
-        flex-direction: column; 
-        overflow-y: auto; 
-        overflow-x: hidden; 
-      }
-      
+      body { height: auto; min-height: 100vh; flex-direction: column; overflow-y: auto; overflow-x: hidden; }
       body:not(.game-on) #sidebar { width: 100%; height: auto; min-height: 100vh; border-right: none; border-bottom: none; flex-direction: column; justify-content: flex-start; padding-bottom: calc(40px + env(safe-area-inset-bottom)); }
       body:not(.game-on) .panel { width: 100%; box-sizing: border-box; flex: none; }
       body:not(.game-on) #main-area { display: none !important; } 
-      
       body.game-on #sidebar { width: 100%; height: auto; border-right: none; border-bottom: 1px solid var(--glass-border); padding: 5px; position: sticky; top: 0; z-index: 50; }
       body.game-on #main-area { display: flex !important; flex: 1; padding: 5px; padding-bottom: calc(20px + env(safe-area-inset-bottom)); }
-      
-      body:not(.game-on) #sidebar h1 { font-size: 22px; }
-      body.game-on #sidebar h1 { font-size: 20px; }
-      
-      #hud { padding: 8px; flex-wrap: wrap; margin-bottom: 5px; }
-      #hudA { width: 50%; order: 1; }
-      #hudB { width: 50%; order: 2; }
-      
-      #hudCenter { 
-        display: grid; 
-        grid-template-rows: auto auto; 
-        grid-template-columns: 1fr; 
-        justify-items: center; 
-        align-items: center; 
-        width: 100%; 
-        order: 3; 
-        margin-top: 5px; 
-        padding-top: 5px; 
-        border-top: 1px dashed rgba(148, 163, 184, 0.4); 
-        gap: 4px;
-      }
-      .score-small-top { grid-row: 1; grid-column: 1; }
-      .fit-box-score { grid-row: 2; grid-column: 1; width: 100%; }
-      
-      .score-main-row { 
-        grid-row: 2; 
-        grid-column: 1; 
-        width: 100%; 
-        justify-content: space-between; 
-        padding: 0 15px; 
-        box-sizing: border-box;
-        z-index: 10;
-        pointer-events: none; 
-      }
+      body:not(.game-on) #sidebar h1 { font-size: 22px; } body.game-on #sidebar h1 { font-size: 20px; }
+      #hud { padding: 8px; flex-wrap: wrap; margin-bottom: 5px; } #hudA { width: 50%; order: 1; } #hudB { width: 50%; order: 2; }
+      #hudCenter { display: grid; grid-template-rows: auto auto; grid-template-columns: 1fr; justify-items: center; align-items: center; width: 100%; order: 3; margin-top: 5px; padding-top: 5px; border-top: 1px dashed rgba(148, 163, 184, 0.4); gap: 4px; }
+      .score-small-top { grid-row: 1; grid-column: 1; } .fit-box-score { grid-row: 2; grid-column: 1; width: 100%; }
+      .score-main-row { grid-row: 2; grid-column: 1; width: 100%; justify-content: space-between; padding: 0 15px; box-sizing: border-box; z-index: 10; pointer-events: none; }
       .score-small-top, .score-small-bottom { font-size: 13px; transform: scale(1); }
+        #victoryStats {
+        width: 100% !important;
+        margin: 5px 0 !important;
+      }
+      .stats-table {
+        font-size: 14px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      }
+      .stats-table th, .stats-table td {
+        padding: 8px 6px;
+        word-break: keep-all;
+      }
+      .stats-table td:first-child {
+        font-size: 12px;
+        letter-spacing: -0.5px;
+      }
     }
   </style>
 </head>
@@ -296,107 +194,65 @@
     <div class="sidebar-header">
       <button id="soundToggleBtn" class="btn-sound" title="切換音效">🔊</button>
       <button id="btnToggleAI" title="切換 AI 機率提示">🤖</button>
-
-      <div style="display: flex; align-items: center; justify-content: center;">
-        <h1>Mine Duel</h1>
-      </div>
-
+      <div style="display: flex; align-items: center; justify-content: center;"><h1>Mine Duel</h1></div>
       <button class="btn-refresh" onclick="location.reload()" title="清空所有並刷新">🔄</button>
       <button id="btnResign" title="認輸">🏳️</button>
+      <button id="btnExitPractice" title="結束練習返回主頁">🏠</button>
     </div>
     
     <div class="panel">
       <h3>1. 玩家設定</h3>
-      <div class="player-setup">
-        <input type="color" id="myColor" title="點擊更換顏色">
-        <input type="text" id="myName" value="Player" placeholder="輸入名稱">
-      </div>
+      <div class="player-setup"><input type="color" id="myColor" title="點擊更換顏色"><input type="text" id="myName" value="Player" placeholder="輸入名稱"></div>
+    </div>
+
+    <div class="panel" id="settingsPanel">
+      <h3>2. 地圖及遊戲設置</h3>
+      <label>時間模式</label>
+      <select id="timeMode"><option value="fast">⚡ 快速</option><option value="standard" selected>⏳ 標準</option><option value="slow">🐢 慢速</option></select>
+      <label>AI 模式</label>
+      <select id="aiModeSelect"><option value="none" selected>🚫 不允許使用AI</option><option value="1">💡 1 次使用</option><option value="3">💡 3 次使用</option><option value="unlimited">♾️ 無限制</option></select>
+      <label>棋盤大小: <span id="sizeVal" style="color:var(--accent)">12</span></label> <input type="range" id="mapSize" min="4" max="20" value="12">
+      <label>地雷數量: <span id="mineVal" style="color:#ef4444">39</span></label> <input type="range" id="mineCount" min="3" max="139" value="39">
+    </div>
+
+    <div class="panel" id="aiPlayPanel">
+      <h3>3. 與AI對戰 🤖</h3>
+      <label>難度係數: <span id="aiDiffVal" style="color:var(--accent)">1.00</span></label>
+      <input type="range" id="aiDifficulty" min="0.10" max="1.00" step="0.01" value="1.00">
+      <button id="btnStartAI" class="btn-ai">開始與 AI 對戰</button>
     </div>
 
     <div class="panel" id="createPanel">
-      <h3>2. 建立新房間</h3>
+      <h3>4. 建立新房間</h3>
       <label>房間類型</label>
-      <select id="roomPrivacy">
-        <option value="public">🌐 公開 (顯示於大廳)</option>
-        <option value="private">🔒 私密 (6位專屬代碼)</option>
-      </select>
-      
-      <label>時間模式</label>
-      <select id="timeMode">
-        <option value="fast">⚡ 快速 (20秒 + 2秒/步)</option>
-        <option value="standard" selected>⏳ 標準 (60秒 + 3秒/步)</option>
-        <option value="slow">🐢 慢速 (120秒 + 4秒/步)</option>
-      </select>
-
-      <label>AI 模式</label>
-      <select id="aiModeSelect">
-        <option value="none" selected>🚫 默認 不允許使用AI</option>
-        <option value="1">💡 提供 1 次使用*</option>
-        <option value="3">💡 提供 3 次使用*</option>
-        <option value="unlimited">♾️ 無限制使用</option>
-      </select>
-      <div style="font-size: 11px; color: #64748b; margin-top: 5px; line-height: 1.3;">
-        *為只能在比分落後時使用，一旦再次點擊畫面，AI建議將會消失
-      </div>
-      
-      <label>棋盤大小: <span id="sizeVal" style="color:var(--accent)">12</span></label>
-      <input type="range" id="mapSize" min="4" max="20" value="12">
-      
-      <label>地雷數量: <span id="mineVal" style="color:#ef4444">39</span></label>
-      <input type="range" id="mineCount" min="3" max="139" value="39">
-      
+      <select id="roomPrivacy"><option value="public">🌐 公開</option><option value="private">🔒 私密</option></select>
       <button id="btnCreate" class="btn-action">建立並等待對手</button>
       <button id="btnCancel" class="btn-danger" style="display:none;">取消等待</button>
-      
       <div id="status">準備就緒</div>
       <div id="privateCodeDisplay" style="display:none; text-align:center; margin-top:10px; font-weight:bold; font-size:20px; color:#3b82f6; letter-spacing:3px; background:#eff6ff; padding:8px; border-radius:8px;"></div>
     </div>
 
     <div class="panel" id="lobbyPanel">
-      <h3>3. 房間大廳 🌐</h3>
-      <div id="roomListContainer">
-        <p style="font-size:13px; color:#94a3b8; text-align:center;" id="lobbyStatusMsg">正在連線大廳伺服器...</p>
-      </div>
-      <div class="join-manual">
-        <input type="text" id="manualJoinCode" placeholder="輸入代碼" maxlength="8">
-        <button id="btnManualJoin" class="btn-action">加入</button>
-      </div>
+      <h3>5. 房間大廳 🌐</h3>
+      <div id="roomListContainer"><p style="font-size:13px; color:#94a3b8; text-align:center;" id="lobbyStatusMsg">正在連線大廳伺服器...</p></div>
+      <div class="join-manual"><input type="text" id="manualJoinCode" placeholder="輸入代碼" maxlength="8"><button id="btnManualJoin" class="btn-action">加入</button></div>
     </div>
 
-    <!-- 本機練習模式介面 -->
     <div class="panel" id="practicePanel">
-      <h3>4. 本機練習模式 🛠️</h3>
-      <p style="font-size: 13px; color: #475569; margin-bottom: 10px;">單機雙人對戰，無計時。戰鬥中可隨時開關 AI 機率建議。</p>
+      <h3>6. 本機練習模式 🛠️</h3>
       <button id="btnStartPractice" class="btn-practice">進入練習模式</button>
     </div>
   </div>
 
   <div id="main-area">
     <div id="hud">
-      <div id="hudA" class="player-col">
-        <div class="fit-box-name"><span class="player-name" id="nameA">等待房主...</span></div>
-        <div class="fit-box-time"><span class="player-time" id="timeA">⏳ --:--</span></div>
-      </div>
-      
+      <div id="hudA" class="player-col"><div class="fit-box-name"><span class="player-name" id="nameA">等待房主...</span></div><div class="fit-box-time"><span class="player-time" id="timeA">⏳ --:--</span></div></div>
       <div id="hudCenter" class="score-col">
         <div class="score-small-top" id="remMinesText">剩餘地雷: --</div>
-        <div class="fit-box-score">
-          <div class="score-large" id="scoreLargeText">
-            <span id="scoreA" style="color:#3b82f6">0</span>
-            <span style="color:#94a3b8; margin: 0 5px;">:</span>
-            <span id="scoreB" style="color:#ef4444">0</span>
-          </div>
-        </div>
-        <div class="score-main-row">
-          <div class="score-small-bottom"><span id="reqA" style="color:#3b82f6">再奪-個</span></div>
-          <div class="score-small-bottom"><span id="reqB" style="color:#ef4444">再奪-個</span></div>
-        </div>
+        <div class="fit-box-score"><div class="score-large" id="scoreLargeText"><span id="scoreA" style="color:#3b82f6">0</span><span style="color:#94a3b8; margin: 0 5px;">:</span><span id="scoreB" style="color:#ef4444">0</span></div></div>
+        <div class="score-main-row"><div class="score-small-bottom"><span id="reqA" style="color:#3b82f6">再奪-個</span></div><div class="score-small-bottom"><span id="reqB" style="color:#ef4444">再奪-個</span></div></div>
       </div>
-
-      <div id="hudB" class="player-col">
-        <div class="fit-box-name"><span class="player-name" id="nameB">等待對手...</span></div>
-        <div class="fit-box-time"><span class="player-time" id="timeB">⏳ --:--</span></div>
-      </div>
+      <div id="hudB" class="player-col"><div class="fit-box-name"><span class="player-name" id="nameB">等待對手...</span></div><div class="fit-box-time"><span class="player-time" id="timeB">⏳ --:--</span></div></div>
     </div>
 
     <div id="game-container">
@@ -404,9 +260,71 @@
       <div id="overlay">
         <h2 id="overlayTitle">Mine Duel</h2>
         <p id="overlayDesc">在側邊欄建立或加入房間來開始對戰</p>
+        
+        <!-- 動態生成的 Web 結算表會插在這裡 -->
+
+        <!-- 下載動態 PDF 報表區域 -->
+        <div id="pdfControls" style="display:none; justify-content: center; align-items: center; gap: 10px; margin-top: 15px;">
+            <select id="pdfScaleSelect" style="width: auto; padding: 12px; border-radius: 12px; font-size: 16px; font-weight: bold; border: 1px solid #cbd5e1; outline: none; cursor: pointer; background: #fff;">
+                <option value="1.0">1.0x</option>
+                <option value="1.2">1.2x</option>
+                <option value="1.6">1.6x</option>
+                <option value="2.0" selected>2.0x</option>
+                <option value="2.5">2.5x</option>
+                <option value="3.0">3.0x</option>
+            </select>
+            <button id="btnDownloadPDF" onclick="downloadPDF()" style="width: 250px; font-size: 16px; padding: 12px; background: linear-gradient(135deg, #10b981, #059669); color: #fff; border: none; border-radius: 12px; cursor: pointer; box-shadow: 0 4px 15px rgba(16,185,129,0.3); font-weight: bold; transition: all 0.3s;">📄 Download Tactical Report</button>
+        </div>
+
         <button id="btnHome" onclick="location.reload()">🏠 回到主頁</button>
       </div>
     </div>
+  </div>
+
+  <!-- PDF 生成用隱藏區塊 (白底版) -->
+  <div id="pdf-container">
+    <div class="pdf-page" id="pdf-page-1">
+      <div class="pdf-title">Mine Duel - Tactical Report</div>
+      <div class="pdf-subtitle" id="pdf-p1-date">Head-to-Head Analytics</div>
+      
+      <div class="vs-container">
+        <!-- Player A -->
+        <div class="vs-col pA">
+          <div class="vs-name" id="pdf-a-name" style="color: #3b82f6;">Player A</div>
+          <div class="vs-score" id="pdf-a-score" style="color: #60a5fa;">0</div>
+          <div class="stat-row"><span class="stat-label">Capture Efficiency</span><span class="stat-val" id="pdf-a-eff" style="color:#1e293b">0%</span></div>
+          <div class="stat-row"><span class="stat-label">Hit 100% Rate</span><span class="stat-val" id="pdf-a-hit100" style="color:#1e293b">0%</span></div>
+          <div class="stat-row"><span class="stat-label">Optimal Move %</span><span class="stat-val" id="pdf-a-opt" style="color:#1e293b">0%</span></div>
+          <div class="stat-row"><span class="stat-label">Match Rate</span><span class="stat-val" id="pdf-a-match" style="color:#1e293b">0%</span></div>
+          <div class="stat-row"><span class="stat-label">Avg Delta</span><span class="stat-val" id="pdf-a-delta" style="color:#fbbf24">0%</span></div>
+          <div class="stat-row"><span class="stat-label">⭐ Best Moves</span><span class="stat-val" id="pdf-a-best" style="color:#4ade80">0</span></div>
+          <div class="stat-row"><span class="stat-label">⚠️ Inaccuracies</span><span class="stat-val" id="pdf-a-inacc" style="color:#facc15">0</span></div>
+          <div class="stat-row"><span class="stat-label">❌ Missed Mines</span><span class="stat-val" id="pdf-a-miss" style="color:#fb923c">0</span></div>
+          <div class="stat-row"><span class="stat-label">💀 Blunders</span><span class="stat-val" id="pdf-a-blun" style="color:#f87171">0</span></div>
+        </div>
+        <!-- Player B -->
+        <div class="vs-col pB">
+          <div class="vs-name" id="pdf-b-name" style="color: #ef4444;">Player B</div>
+          <div class="vs-score" id="pdf-b-score" style="color: #f87171;">0</div>
+          <div class="stat-row"><span class="stat-label">Capture Efficiency</span><span class="stat-val" id="pdf-b-eff" style="color:#1e293b">0%</span></div>
+          <div class="stat-row"><span class="stat-label">Hit 100% Rate</span><span class="stat-val" id="pdf-b-hit100" style="color:#1e293b">0%</span></div>
+          <div class="stat-row"><span class="stat-label">Optimal Move %</span><span class="stat-val" id="pdf-b-opt" style="color:#1e293b">0%</span></div>
+          <div class="stat-row"><span class="stat-label">Match Rate</span><span class="stat-val" id="pdf-b-match" style="color:#1e293b">0%</span></div>
+          <div class="stat-row"><span class="stat-label">Avg Delta</span><span class="stat-val" id="pdf-b-delta" style="color:#fbbf24">0%</span></div>
+          <div class="stat-row"><span class="stat-label">⭐ Best Moves</span><span class="stat-val" id="pdf-b-best" style="color:#4ade80">0</span></div>
+          <div class="stat-row"><span class="stat-label">⚠️ Inaccuracies</span><span class="stat-val" id="pdf-b-inacc" style="color:#facc15">0</span></div>
+          <div class="stat-row"><span class="stat-label">❌ Missed Mines</span><span class="stat-val" id="pdf-b-miss" style="color:#fb923c">0</span></div>
+          <div class="stat-row"><span class="stat-label">💀 Blunders</span><span class="stat-val" id="pdf-b-blun" style="color:#f87171">0</span></div>
+        </div>
+      </div>
+      <div style="text-align: center; margin-top: 40px; color: #64748b; font-size: 16px;">
+        * This report focuses on identifying critical logic errors. <br>
+        * Blunder: Clicking a 0% cell when valid targets exist. <br>
+        * Missed Mine: Failing to capture a 100% visible mine.
+      </div>
+    </div>
+    
+    <div id="pdf-tactical-pages"></div>
   </div>
 
   <script>
@@ -414,7 +332,6 @@
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
     
-    // UI Elements
     const myNameInput = document.getElementById('myName');
     const myColorInput = document.getElementById('myColor');
     const statusText = document.getElementById('status');
@@ -423,1419 +340,565 @@
     const privateCodeDisplay = document.getElementById('privateCodeDisplay');
     const btnToggleAI = document.getElementById('btnToggleAI');
     const btnResign = document.getElementById('btnResign');
+    const btnExitPractice = document.getElementById('btnExitPractice');
     
     let isSoundOn = true;
     const soundToggleBtn = document.getElementById('soundToggleBtn');
-    soundToggleBtn.addEventListener('click', () => {
-      isSoundOn = !isSoundOn;
-      soundToggleBtn.innerText = isSoundOn ? '🔊' : '🔇';
-      if (audioCtx.state === 'suspended') audioCtx.resume();
-    });
+    soundToggleBtn.addEventListener('click', () => { isSoundOn = !isSoundOn; soundToggleBtn.innerText = isSoundOn ? '🔊' : '🔇'; if (audioCtx.state === 'suspended') audioCtx.resume(); });
 
-    // ================= 變數邏輯與 AI UI 更新 =================
-    let isPracticeMode = false;
-    let isAIToggledOn = false;
-    let aiProbabilities = [];
-    let myAiUsesLeft = 0; // 紀錄自己剩餘的 AI 扣除次數
+    let isPracticeMode = false, isAIMode = false, isAIToggledOn = false, aiProbabilities = [], myAiUsesLeft = 0; 
+
+    function disablePanels() { ['settingsPanel', 'createPanel', 'lobbyPanel', 'aiPlayPanel', 'practicePanel'].forEach(id => { const el = document.getElementById(id); if(el) { el.style.opacity = '0.5'; el.style.pointerEvents = 'none'; } }); }
 
     function updateAIBtnUI() {
-      if (!gameActive) {
-        btnToggleAI.style.display = 'none';
-        return;
-      }
-      if (isPracticeMode || engine.aiMode === 'unlimited') {
-        btnToggleAI.innerHTML = '🤖';
-        btnToggleAI.style.display = 'flex';
-        btnToggleAI.style.opacity = '1';
-        btnToggleAI.style.pointerEvents = 'auto';
-      } else if (engine.aiMode === '1' || engine.aiMode === '3') {
-        btnToggleAI.innerHTML = `🤖<span style="font-size:11px; margin-left:1px; font-weight:bold">${myAiUsesLeft}</span>`;
-        btnToggleAI.style.display = 'flex';
-        if (myAiUsesLeft <= 0 && !isAIToggledOn) {
-          btnToggleAI.style.opacity = '0.5';
-          btnToggleAI.style.pointerEvents = 'none';
-        } else {
-          btnToggleAI.style.opacity = '1';
-          btnToggleAI.style.pointerEvents = 'auto';
-        }
-      } else {
-        btnToggleAI.style.display = 'none';
-      }
+      if (!gameActive) { btnToggleAI.style.display = 'none'; return; }
+      if (isPracticeMode || engine.aiMode === 'unlimited') { btnToggleAI.innerHTML = '🤖'; btnToggleAI.style.display = 'flex'; btnToggleAI.style.opacity = '1'; btnToggleAI.style.pointerEvents = 'auto'; } 
+      else if (engine.aiMode === '1' || engine.aiMode === '3') { btnToggleAI.innerHTML = `🤖<span style="font-size:11px; margin-left:1px; font-weight:bold">${myAiUsesLeft}</span>`; btnToggleAI.style.display = 'flex';
+        if (myAiUsesLeft <= 0 && !isAIToggledOn) { btnToggleAI.style.opacity = '0.5'; btnToggleAI.style.pointerEvents = 'none'; } else { btnToggleAI.style.opacity = '1'; btnToggleAI.style.pointerEvents = 'auto'; }
+      } else { btnToggleAI.style.display = 'none'; }
     }
 
     btnToggleAI.addEventListener('click', () => {
       if (!gameActive) return;
-      
-      // 開啟前的限制檢查
       if (!isAIToggledOn && !isPracticeMode && (engine.aiMode === '1' || engine.aiMode === '3')) {
-        let myScore = isHost ? engine.scoreA : engine.scoreB;
-        let opScore = isHost ? engine.scoreB : engine.scoreA;
-        if (myScore >= opScore) {
-          alert("只能在比分落後時使用 AI！");
-          return;
-        }
-        if (myAiUsesLeft <= 0) {
-          alert("AI 使用次數已耗盡！");
-          return;
-        }
-        myAiUsesLeft--;
-        updateAIBtnUI();
+        let myScore = isHost ? engine.scoreA : engine.scoreB; let opScore = isHost ? engine.scoreB : engine.scoreA;
+        if (myScore >= opScore) { alert("只能在比分落後時使用 AI！"); return; }
+        if (myAiUsesLeft <= 0) { alert("AI 使用次數已耗盡！"); return; }
+        myAiUsesLeft--; updateAIBtnUI();
       }
-
       isAIToggledOn = !isAIToggledOn;
-      if (isAIToggledOn) {
-        btnToggleAI.classList.add('active');
-        calculateAIProbabilities();
-      } else {
-        btnToggleAI.classList.remove('active');
-        aiProbabilities = Array(engine.size * engine.size).fill(null); 
-      }
+      if (isAIToggledOn) { btnToggleAI.classList.add('active'); calculateAIProbabilities(); } else { btnToggleAI.classList.remove('active'); aiProbabilities = Array(engine.size * engine.size).fill(null); }
       drawBoard();
     });
 
-    btnResign.addEventListener('click', () => {
-      if (!gameActive) return;
-      if (confirm("確定要認輸並返回主頁嗎？")) {
-        gameActive = false;
-        if (timerInterval) clearInterval(timerInterval);
-        const winner = isHost ? 'B' : 'A';
-        if (conn) conn.send({ type: 'GAME_OVER', winner, reason: 'resign' });
-        // 認輸者直接返回主頁，不顯示結算畫面
-        location.reload();
-      }
-    });
+    btnResign.addEventListener('click', () => { if (!gameActive) return; if (confirm("確定要認輸並返回主頁嗎？")) { gameActive = false; if (timerInterval) clearInterval(timerInterval); const winner = isHost ? 'B' : 'A'; if (conn) conn.send({ type: 'GAME_OVER', winner, reason: 'resign' }); location.reload(); } });
+    btnExitPractice.addEventListener('click', () => { if (confirm("確定要返回主頁嗎？")) location.reload(); });
 
     document.getElementById('btnStartPractice').addEventListener('click', () => {
       if (audioCtx.state === 'suspended') audioCtx.resume(); 
-      isHost = true;
-      isPracticeMode = true;
-      players.A = { name: myNameInput.value || "Player 1", color: myColorInput.value };
-      players.B = { name: "Player 2", color: getContrastingColor(myColorInput.value, "#ef4444") };
-      
-      engine.size = parseInt(document.getElementById('mapSize').value);
-      engine.minesCount = parseInt(document.getElementById('mineCount').value);
-      engine.timeMode = 'none'; 
-      engine.aiMode = 'unlimited';
-      
-      document.body.classList.add('practice-mode'); 
-      
-      stopBroadcastingLobby();
-      if(peer) peer.destroy();
-      if(conn) conn.close();
-
-      document.getElementById('createPanel').style.opacity = '0.5';
-      document.getElementById('createPanel').style.pointerEvents = 'none';
-      document.getElementById('lobbyPanel').style.opacity = '0.5';
-      document.getElementById('lobbyPanel').style.pointerEvents = 'none';
-      document.getElementById('practicePanel').style.opacity = '0.5';
-      document.getElementById('practicePanel').style.pointerEvents = 'none';
-      
-      startGameEngine();
+      isHost = true; isPracticeMode = true; isAIMode = false;
+      players.A = { name: myNameInput.value || "Player 1", color: myColorInput.value }; players.B = { name: "Player 2", color: getContrastingColor(myColorInput.value, "#ef4444") };
+      engine.size = parseInt(document.getElementById('mapSize').value); engine.minesCount = parseInt(document.getElementById('mineCount').value); engine.timeMode = 'none'; engine.aiMode = 'unlimited';
+      document.body.classList.add('practice-mode'); stopBroadcastingLobby(); if(peer) peer.destroy(); if(conn) conn.close(); disablePanels(); startGameEngine();
     });
 
-  function getCombinations(n, k) {
-    if (k < 0 || k > n || n < 0) return 0n;
-    if (k === 0 || k === n) return 1n;
-    let bn = BigInt(n), bk = BigInt(k);
-    if (bk > bn / 2n) bk = bn - bk;
-    let res = 1n;
-    for (let i = 1n; i <= bk; i++) {
-      res = (res * bn - res * (i - 1n)) / i;
-    }
-    return res;
-  }
+    document.getElementById('btnStartAI').addEventListener('click', () => {
+      if (audioCtx.state === 'suspended') audioCtx.resume(); 
+      isHost = true; isPracticeMode = false; isAIMode = true;
+      players.A = { name: myNameInput.value || "Player 1", color: myColorInput.value };
+      let diffValue = parseFloat(document.getElementById('aiDifficulty').value).toFixed(2); players.B = { name: "AI-" + diffValue, color: getContrastingColor(myColorInput.value, "#8b5cf6") };
+      engine.size = parseInt(document.getElementById('mapSize').value); engine.minesCount = parseInt(document.getElementById('mineCount').value);
+      engine.timeMode = document.getElementById('timeMode').value; engine.aiMode = document.getElementById('aiModeSelect').value; engine.aiDifficulty = parseFloat(document.getElementById('aiDifficulty').value);
+      stopBroadcastingLobby(); if(peer) peer.destroy(); if(conn) conn.close(); disablePanels(); startGameEngine();
+      if (engine.turn === 'B') setTimeout(makeAIMove, 800);
+    });
 
-  function calculateAIProbabilities() {
-    const totalCells = engine.size * engine.size;
-    aiProbabilities = Array(totalCells).fill(0);
-
-    let totalRemainingMines = engine.minesCount - engine.scoreA - engine.scoreB;
-    let unrevealed = new Set();
-    
-    for (let i = 0; i < totalCells; i++) {
-      if (!engine.revealed[i]) unrevealed.add(i);
-    }
-    if (unrevealed.size === 0) return;
-
-    let knownMines = new Set();
-    let knownSafe = new Set();
-
-    let changed = true;
-    while (changed) {
-      changed = false;
-      for (let i = 0; i < totalCells; i++) {
-        if (engine.revealed[i] && engine.numbers[i] > 0 && !engine.mines[i]) {
-          let unrevNeighbors = [];
-          let mineCount = 0;
-          let x = i % engine.size, y = Math.floor(i / engine.size);
-          for (let dy = -1; dy <= 1; dy++) {
-            for (let dx = -1; dx <= 1; dx++) {
-              if (dx === 0 && dy === 0) continue;
-              let nx = x + dx, ny = y + dy;
-              if (nx >= 0 && nx < engine.size && ny >= 0 && ny < engine.size) {
-                let nIdx = ny * engine.size + nx;
-                if ((engine.revealed[nIdx] && engine.mines[nIdx]) || knownMines.has(nIdx)) {
-                  mineCount++;
-                } else if (!engine.revealed[nIdx] && !knownSafe.has(nIdx)) {
-                  unrevNeighbors.push(nIdx);
-                }
-              }
-            }
-          }
-          let req = engine.numbers[i] - mineCount;
-          if (req === unrevNeighbors.length && req > 0) {
-            unrevNeighbors.forEach(u => { knownMines.add(u); unrevealed.delete(u); });
-            changed = true;
-          } else if (req === 0 && unrevNeighbors.length > 0) {
-            unrevNeighbors.forEach(u => { knownSafe.add(u); unrevealed.delete(u); });
-            changed = true;
-          }
-        }
+    function makeAIMove() {
+      if (!gameActive || !isAIMode || engine.turn !== 'B') return;
+      calculateAIProbabilities(); let chosenIdx = -1; const totalCells = engine.size * engine.size; let candidates = [];
+      for (let i = 0; i < totalCells; i++) { if (!engine.revealed[i] && aiProbabilities[i] !== null) candidates.push({ index: i, prob: aiProbabilities[i] }); }
+      if (candidates.length > 0) {
+        candidates.sort((a, b) => b.prob - a.prob); let difficulty = engine.aiDifficulty !== undefined ? engine.aiDifficulty : 1.0;
+        for (let i = 0; i < candidates.length; i++) { if (Math.random() <= difficulty) { chosenIdx = candidates[i].index; break; } }
+        if (chosenIdx === -1) chosenIdx = candidates[candidates.length - 1].index;
+      } else {
+        let unrev = []; for (let i = 0; i < totalCells; i++) { if (!engine.revealed[i]) unrev.push(i); }
+        if (unrev.length > 0) chosenIdx = unrev[Math.floor(Math.random() * unrev.length)];
       }
+      if (chosenIdx !== -1) { let x = chosenIdx % engine.size; let y = Math.floor(chosenIdx / engine.size); processClick(x, y, 'B'); }
     }
 
-    for (let u of knownMines) aiProbabilities[u] = 1.0;
-    for (let u of knownSafe) aiProbabilities[u] = 0.0;
+    function getCombinations(n, k) { if (k < 0 || k > n || n < 0) return 0n; if (k === 0 || k === n) return 1n; let bn = BigInt(n), bk = BigInt(k); if (bk > bn / 2n) bk = bn - bk; let res = 1n; for (let i = 1n; i <= bk; i++) { res = (res * bn - res * (i - 1n)) / i; } return res; }
 
-    let dynamicRemainingMines = totalRemainingMines - knownMines.size;
-    let constraints = [];
-    let frontierSet = new Set();
+    function calculateAIProbabilities() {
+      const totalCells = engine.size * engine.size; aiProbabilities = Array(totalCells).fill(0); let totalRemainingMines = engine.minesCount - engine.scoreA - engine.scoreB;
+      let unrevealed = new Set(); for (let i = 0; i < totalCells; i++) { if (!engine.revealed[i]) unrevealed.add(i); }
+      if (unrevealed.size === 0) return;
+      let knownMines = new Set(), knownSafe = new Set(), changed = true;
+      while (changed) { changed = false; for (let i = 0; i < totalCells; i++) { if (engine.revealed[i] && engine.numbers[i] > 0 && !engine.mines[i]) {
+            let unrevNeighbors = [], mineCount = 0; let x = i % engine.size, y = Math.floor(i / engine.size);
+            for (let dy = -1; dy <= 1; dy++) { for (let dx = -1; dx <= 1; dx++) { if (dx === 0 && dy === 0) continue; let nx = x + dx, ny = y + dy; if (nx >= 0 && nx < engine.size && ny >= 0 && ny < engine.size) { let nIdx = ny * engine.size + nx; if ((engine.revealed[nIdx] && engine.mines[nIdx]) || knownMines.has(nIdx)) mineCount++; else if (!engine.revealed[nIdx] && !knownSafe.has(nIdx)) unrevNeighbors.push(nIdx); } } }
+            let req = engine.numbers[i] - mineCount;
+            if (req === unrevNeighbors.length && req > 0) { unrevNeighbors.forEach(u => { knownMines.add(u); unrevealed.delete(u); }); changed = true; } 
+            else if (req === 0 && unrevNeighbors.length > 0) { unrevNeighbors.forEach(u => { knownSafe.add(u); unrevealed.delete(u); }); changed = true; }
+      } } }
+      for (let u of knownMines) aiProbabilities[u] = 1.0; for (let u of knownSafe) aiProbabilities[u] = 0.0;
 
-    for (let i = 0; i < totalCells; i++) {
-      if (engine.revealed[i] && engine.numbers[i] > 0 && !engine.mines[i]) {
-        let x = i % engine.size, y = Math.floor(i / engine.size);
-        let uncertain = [];
-        let mineCount = 0;
-        for (let dy = -1; dy <= 1; dy++) {
-          for (let dx = -1; dx <= 1; dx++) {
-            if (dx === 0 && dy === 0) continue;
-            let nx = x + dx, ny = y + dy;
-            if (nx >= 0 && nx < engine.size && ny >= 0 && ny < engine.size) {
-              let nIdx = ny * engine.size + nx;
-              if ((engine.revealed[nIdx] && engine.mines[nIdx]) || knownMines.has(nIdx)) {
-                mineCount++;
-              } else if (!engine.revealed[nIdx] && !knownSafe.has(nIdx)) {
-                uncertain.push(nIdx);
-                frontierSet.add(nIdx);
+      let dynamicRemainingMines = totalRemainingMines - knownMines.size; let constraints = [], frontierSet = new Set();
+      for (let i = 0; i < totalCells; i++) { if (engine.revealed[i] && engine.numbers[i] > 0 && !engine.mines[i]) {
+          let x = i % engine.size, y = Math.floor(i / engine.size); let uncertain = [], mineCount = 0;
+          for (let dy = -1; dy <= 1; dy++) { for (let dx = -1; dx <= 1; dx++) { if (dx === 0 && dy === 0) continue; let nx = x + dx, ny = y + dy; if (nx >= 0 && nx < engine.size && ny >= 0 && ny < engine.size) { let nIdx = ny * engine.size + nx; if ((engine.revealed[nIdx] && engine.mines[nIdx]) || knownMines.has(nIdx)) mineCount++; else if (!engine.revealed[nIdx] && !knownSafe.has(nIdx)) { uncertain.push(nIdx); frontierSet.add(nIdx); } } } }
+          if (uncertain.length > 0) constraints.push({ cells: uncertain, req: engine.numbers[i] - mineCount });
+      } }
+      let unknownCells = []; for (let u of unrevealed) { if (!frontierSet.has(u)) unknownCells.push(u); }
+
+      let isDpSuccess = false;
+      if (constraints.length > 0) {
+        let cellToConstraints = new Map(); frontierSet.forEach(c => cellToConstraints.set(c, [])); constraints.forEach((con, cIdx) => { con.cells.forEach(c => cellToConstraints.get(c).push(cIdx)); });
+        let regionsMap = new Map(); frontierSet.forEach(c => { let sig = cellToConstraints.get(c).sort((a, b) => a - b).join(','); if (!regionsMap.has(sig)) regionsMap.set(sig, { cells: [], constraints: cellToConstraints.get(c) }); regionsMap.get(sig).cells.push(c); });
+        let regions = Array.from(regionsMap.values()); let constraintToRegions = Array(constraints.length).fill().map(() => []); regions.forEach((reg, rIdx) => { reg.constraints.forEach(cIdx => constraintToRegions[cIdx].push(rIdx)); });
+        let adj = Array(regions.length).fill().map(() => []); constraints.forEach((con, cIdx) => { let regs = constraintToRegions[cIdx]; for (let i = 0; i < regs.length; i++) { for (let j = i + 1; j < regs.length; j++) { adj[regs[i]].push(regs[j]); adj[regs[j]].push(regs[i]); } } });
+        let visited = Array(regions.length).fill(false), components = [];
+        for (let i = 0; i < regions.length; i++) { if (!visited[i]) { let compRegs = [], q = [i]; visited[i] = true; while (q.length > 0) { let curr = q.shift(); compRegs.push(curr); for (let nxt of adj[curr]) { if (!visited[nxt]) { visited[nxt] = true; q.push(nxt); } } } components.push(compRegs); } }
+        let componentResults = [], globalAbort = false;
+        for (let compRegs of components) {
+          if (globalAbort) break; let compConstraintsSet = new Set(); compRegs.forEach(rIdx => regions[rIdx].constraints.forEach(cIdx => compConstraintsSet.add(cIdx))); let compConstraints = Array.from(compConstraintsSet);
+          let waysByMines = new Map(), regionMinesWays = new Map(); compRegs.forEach(rIdx => regionMinesWays.set(rIdx, new Map())); let localAssigned = new Map();
+          function backtrackReg(idx) {
+            if (idx === compRegs.length) {
+              for (let cIdx of compConstraints) { let sum = 0; for (let rIdx of constraintToRegions[cIdx]) sum += localAssigned.get(rIdx); if (sum !== constraints[cIdx].req) return; }
+              let m = 0, ways = 1n; for (let rIdx of compRegs) { let assigned = localAssigned.get(rIdx); m += assigned; ways *= getCombinations(regions[rIdx].cells.length, assigned); }
+              waysByMines.set(m, (waysByMines.get(m) || 0n) + ways); for (let rIdx of compRegs) { let assigned = localAssigned.get(rIdx); let rMap = regionMinesWays.get(rIdx); rMap.set(m, (rMap.get(m) || 0n) + ways * BigInt(assigned)); }
+              return;
+            }
+            let rIdx = compRegs[idx], maxMines = regions[rIdx].cells.length;
+            for (let val = 0; val <= maxMines; val++) {
+              localAssigned.set(rIdx, val); let valid = true;
+              for (let cIdx of regions[rIdx].constraints) { let sumAssigned = 0, maxRemaining = 0; for (let crIdx of constraintToRegions[cIdx]) { if (localAssigned.has(crIdx)) sumAssigned += localAssigned.get(crIdx); else maxRemaining += regions[crIdx].cells.length; } if (sumAssigned > constraints[cIdx].req || sumAssigned + maxRemaining < constraints[cIdx].req) { valid = false; break; } }
+              if (valid) backtrackReg(idx + 1); localAssigned.delete(rIdx);
+            }
+          }
+          backtrackReg(0); if (waysByMines.size === 0) { globalAbort = true; break; } componentResults.push({ waysByMines, regionMinesWays });
+        }
+        if (!globalAbort) {
+          let N = componentResults.length, prefixDp = [new Map([[0, 1n]])];
+          for (let i = 0; i < N; i++) { let nextDp = new Map(); for (let [m1, w1] of prefixDp[i].entries()) { for (let [m2, w2] of componentResults[i].waysByMines.entries()) { let total = m1 + m2; nextDp.set(total, (nextDp.get(total) || 0n) + w1 * w2); } } prefixDp.push(nextDp); }
+          let suffixDp = Array(N + 1); suffixDp[N] = new Map([[0, 1n]]);
+          for (let i = N - 1; i >= 0; i--) { let nextDp = new Map(); for (let [m1, w1] of suffixDp[i + 1].entries()) { for (let [m2, w2] of componentResults[i].waysByMines.entries()) { let total = m1 + m2; nextDp.set(total, (nextDp.get(total) || 0n) + w1 * w2); } } suffixDp[i] = nextDp; }
+          let finalDp = prefixDp[N], totalValidBoards = 0n, unknownSize = unknownCells.length;
+          for (let [m, count] of finalDp.entries()) { let remain = dynamicRemainingMines - m; if (remain >= 0 && remain <= unknownSize) totalValidBoards += count * getCombinations(unknownSize, remain); }
+          let ignoreGlobalLimit = false; if (totalValidBoards === 0n) { ignoreGlobalLimit = true; for (let [m, count] of finalDp.entries()) totalValidBoards += count; }
+          if (totalValidBoards > 0n) {
+            isDpSuccess = true;
+            for (let i = 0; i < N; i++) {
+              let comp = componentResults[i], otherDp = new Map();
+              for (let [m1, w1] of prefixDp[i].entries()) { for (let [m2, w2] of suffixDp[i + 1].entries()) { let m = m1 + m2; otherDp.set(m, (otherDp.get(m) || 0n) + w1 * w2); } }
+              for (let [rIdx, rWaysMap] of comp.regionMinesWays.entries()) {
+                let regMinesWaysSum = 0n;
+                for (let [m_comp, w_comp] of rWaysMap.entries()) { for (let [m_other, w_other] of otherDp.entries()) { let m_total = m_comp + m_other; if (!ignoreGlobalLimit) { let remain = dynamicRemainingMines - m_total; if (remain >= 0 && remain <= unknownSize) regMinesWaysSum += w_comp * w_other * getCombinations(unknownSize, remain); } else { regMinesWaysSum += w_comp * w_other; } } }
+                let expectedMinesInRegion = Number((regMinesWaysSum * 100000n) / totalValidBoards) / 100000; let cellProb = expectedMinesInRegion / regions[rIdx].cells.length; for (let cIdx of regions[rIdx].cells) aiProbabilities[cIdx] = cellProb;
               }
+            }
+            if (unknownSize > 0) {
+              if (!ignoreGlobalLimit) { let expectedUnknownWays = 0n; for (let [m_total, count] of finalDp.entries()) { let remain = dynamicRemainingMines - m_total; if (remain >= 0 && remain <= unknownSize) expectedUnknownWays += count * getCombinations(unknownSize, remain) * BigInt(remain); } let unkProb = Number((expectedUnknownWays * 100000n) / (totalValidBoards * BigInt(unknownSize))) / 100000; for (let u of unknownCells) aiProbabilities[u] = unkProb; } else { for (let u of unknownCells) aiProbabilities[u] = 0.0; }
             }
           }
         }
-        if (uncertain.length > 0) {
-          constraints.push({ cells: uncertain, req: engine.numbers[i] - mineCount });
-        }
-      }
+      } else { isDpSuccess = true; let p = unknownCells.length > 0 ? Math.min(1.0, Math.max(0, dynamicRemainingMines / unknownCells.length)) : 0; for (let u of unknownCells) aiProbabilities[u] = p; }
+      if (!isDpSuccess) { let active = [...frontierSet, ...unknownCells]; let p = active.length > 0 ? Math.min(1.0, Math.max(0, dynamicRemainingMines / active.length)) : 0; for (let u of active) aiProbabilities[u] = p; }
+      for (let i = 0; i < totalCells; i++) { if (!engine.revealed[i] && aiProbabilities[i] !== null) { if (aiProbabilities[i] > 0.999) aiProbabilities[i] = 1.0; if (aiProbabilities[i] < 0.001) aiProbabilities[i] = 0.0; } }
     }
 
-    let unknownCells = [];
-    for (let u of unrevealed) {
-      if (!frontierSet.has(u)) unknownCells.push(u);
-    }
-
-    let isDpSuccess = false;
-
-    if (constraints.length > 0) {
-      let cellToConstraints = new Map();
-      frontierSet.forEach(c => cellToConstraints.set(c, []));
-      constraints.forEach((con, cIdx) => {
-        con.cells.forEach(c => cellToConstraints.get(c).push(cIdx));
-      });
-
-      let regionsMap = new Map();
-      frontierSet.forEach(c => {
-        let sig = cellToConstraints.get(c).sort((a, b) => a - b).join(',');
-        if (!regionsMap.has(sig)) {
-          regionsMap.set(sig, { cells: [], constraints: cellToConstraints.get(c) });
-        }
-        regionsMap.get(sig).cells.push(c);
-      });
-
-      let regions = Array.from(regionsMap.values());
-      let constraintToRegions = Array(constraints.length).fill().map(() => []);
-      regions.forEach((reg, rIdx) => {
-        reg.constraints.forEach(cIdx => constraintToRegions[cIdx].push(rIdx));
-      });
-
-      let adj = Array(regions.length).fill().map(() => []);
-      constraints.forEach((con, cIdx) => {
-        let regs = constraintToRegions[cIdx];
-        for (let i = 0; i < regs.length; i++) {
-          for (let j = i + 1; j < regs.length; j++) {
-            adj[regs[i]].push(regs[j]);
-            adj[regs[j]].push(regs[i]);
-          }
-        }
-      });
-
-      let visited = Array(regions.length).fill(false);
-      let components = [];
-      for (let i = 0; i < regions.length; i++) {
-        if (!visited[i]) {
-          let compRegs = [];
-          let q = [i];
-          visited[i] = true;
-          while (q.length > 0) {
-            let curr = q.shift();
-            compRegs.push(curr);
-            for (let nxt of adj[curr]) {
-              if (!visited[nxt]) {
-                visited[nxt] = true;
-                q.push(nxt);
-              }
-            }
-          }
-          components.push(compRegs);
-        }
-      }
-
-      let componentResults = [];
-      let globalAbort = false;
-
-      for (let compRegs of components) {
-        if (globalAbort) break;
-
-        let compConstraintsSet = new Set();
-        compRegs.forEach(rIdx => regions[rIdx].constraints.forEach(cIdx => compConstraintsSet.add(cIdx)));
-        let compConstraints = Array.from(compConstraintsSet);
-
-        let waysByMines = new Map();
-        let regionMinesWays = new Map();
-        compRegs.forEach(rIdx => regionMinesWays.set(rIdx, new Map()));
-
-        let localAssigned = new Map();
-
-        function backtrackReg(idx) {
-          if (idx === compRegs.length) {
-            for (let cIdx of compConstraints) {
-              let sum = 0;
-              for (let rIdx of constraintToRegions[cIdx]) sum += localAssigned.get(rIdx);
-              if (sum !== constraints[cIdx].req) return;
-            }
-
-            let m = 0;
-            let ways = 1n;
-            for (let rIdx of compRegs) {
-              let assigned = localAssigned.get(rIdx);
-              m += assigned;
-              ways *= getCombinations(regions[rIdx].cells.length, assigned);
-            }
-
-            waysByMines.set(m, (waysByMines.get(m) || 0n) + ways);
-            for (let rIdx of compRegs) {
-              let assigned = localAssigned.get(rIdx);
-              let rMap = regionMinesWays.get(rIdx);
-              rMap.set(m, (rMap.get(m) || 0n) + ways * BigInt(assigned));
-            }
-            return;
-          }
-
-          let rIdx = compRegs[idx];
-          let maxMines = regions[rIdx].cells.length;
-
-          for (let val = 0; val <= maxMines; val++) {
-            localAssigned.set(rIdx, val);
-            let valid = true;
-
-            for (let cIdx of regions[rIdx].constraints) {
-              let sumAssigned = 0, maxRemaining = 0;
-              for (let crIdx of constraintToRegions[cIdx]) {
-                if (localAssigned.has(crIdx)) sumAssigned += localAssigned.get(crIdx);
-                else maxRemaining += regions[crIdx].cells.length;
-              }
-              if (sumAssigned > constraints[cIdx].req || sumAssigned + maxRemaining < constraints[cIdx].req) {
-                valid = false; break;
-              }
-            }
-
-            if (valid) backtrackReg(idx + 1);
-            localAssigned.delete(rIdx);
-          }
-        }
-
-        backtrackReg(0);
-
-        if (waysByMines.size === 0) {
-          globalAbort = true; 
-          break; 
-        }
-        componentResults.push({ waysByMines, regionMinesWays });
-      }
-
-      if (!globalAbort) {
-        let N = componentResults.length;
-        let prefixDp = [new Map([[0, 1n]])];
-
-        for (let i = 0; i < N; i++) {
-          let nextDp = new Map();
-          for (let [m1, w1] of prefixDp[i].entries()) {
-            for (let [m2, w2] of componentResults[i].waysByMines.entries()) {
-              let total = m1 + m2;
-              nextDp.set(total, (nextDp.get(total) || 0n) + w1 * w2);
-            }
-          }
-          prefixDp.push(nextDp);
-        }
-
-        let suffixDp = Array(N + 1);
-        suffixDp[N] = new Map([[0, 1n]]);
-        for (let i = N - 1; i >= 0; i--) {
-          let nextDp = new Map();
-          for (let [m1, w1] of suffixDp[i + 1].entries()) {
-            for (let [m2, w2] of componentResults[i].waysByMines.entries()) {
-              let total = m1 + m2;
-              nextDp.set(total, (nextDp.get(total) || 0n) + w1 * w2);
-            }
-          }
-          suffixDp[i] = nextDp;
-        }
-
-        let finalDp = prefixDp[N];
-        let totalValidBoards = 0n;
-        let unknownSize = unknownCells.length;
-
-        for (let [m, count] of finalDp.entries()) {
-          let remain = dynamicRemainingMines - m;
-          if (remain >= 0 && remain <= unknownSize) {
-            totalValidBoards += count * getCombinations(unknownSize, remain);
-          }
-        }
-
-        let ignoreGlobalLimit = false;
-        if (totalValidBoards === 0n) {
-          ignoreGlobalLimit = true;
-          for (let [m, count] of finalDp.entries()) totalValidBoards += count;
-        }
-
-        if (totalValidBoards > 0n) {
-          isDpSuccess = true;
-
-          for (let i = 0; i < N; i++) {
-            let comp = componentResults[i];
-            let otherDp = new Map();
-            for (let [m1, w1] of prefixDp[i].entries()) {
-              for (let [m2, w2] of suffixDp[i + 1].entries()) {
-                let m = m1 + m2;
-                otherDp.set(m, (otherDp.get(m) || 0n) + w1 * w2);
-              }
-            }
-
-            for (let [rIdx, rWaysMap] of comp.regionMinesWays.entries()) {
-              let regMinesWaysSum = 0n;
-              for (let [m_comp, w_comp] of rWaysMap.entries()) {
-                for (let [m_other, w_other] of otherDp.entries()) {
-                  let m_total = m_comp + m_other;
-                  if (!ignoreGlobalLimit) {
-                    let remain = dynamicRemainingMines - m_total;
-                    if (remain >= 0 && remain <= unknownSize) {
-                      regMinesWaysSum += w_comp * w_other * getCombinations(unknownSize, remain);
-                    }
-                  } else {
-                    regMinesWaysSum += w_comp * w_other;
-                  }
-                }
-              }
-              
-              let expectedMinesInRegion = Number((regMinesWaysSum * 100000n) / totalValidBoards) / 100000;
-              let cellProb = expectedMinesInRegion / regions[rIdx].cells.length;
-              for (let cIdx of regions[rIdx].cells) aiProbabilities[cIdx] = cellProb;
-            }
-          }
-
-          if (unknownSize > 0) {
-            if (!ignoreGlobalLimit) {
-              let expectedUnknownWays = 0n;
-              for (let [m_total, count] of finalDp.entries()) {
-                let remain = dynamicRemainingMines - m_total;
-                if (remain >= 0 && remain <= unknownSize) {
-                  expectedUnknownWays += count * getCombinations(unknownSize, remain) * BigInt(remain);
-                }
-              }
-              let unkProb = Number((expectedUnknownWays * 100000n) / (totalValidBoards * BigInt(unknownSize))) / 100000;
-              for (let u of unknownCells) aiProbabilities[u] = unkProb;
-            } else {
-              for (let u of unknownCells) aiProbabilities[u] = 0.0;
-            }
-          }
-        }
-      }
-    } else {
-      isDpSuccess = true;
-      let p = unknownCells.length > 0 ? Math.min(1.0, Math.max(0, dynamicRemainingMines / unknownCells.length)) : 0;
-      for (let u of unknownCells) aiProbabilities[u] = p;
-    }
-
-    if (!isDpSuccess) {
-      let active = [...frontierSet, ...unknownCells];
-      let p = active.length > 0 ? Math.min(1.0, Math.max(0, dynamicRemainingMines / active.length)) : 0;
-      for (let u of active) aiProbabilities[u] = p;
-    }
-
-    for (let i = 0; i < totalCells; i++) {
-      if (!engine.revealed[i] && aiProbabilities[i] !== null) {
-        if (aiProbabilities[i] > 0.999) aiProbabilities[i] = 1.0;
-        if (aiProbabilities[i] < 0.001) aiProbabilities[i] = 0.0;
-      }
-    }
-  }
-
-    const mapSizeInput = document.getElementById('mapSize');
-    const mineCountInput = document.getElementById('mineCount');
-    const sizeValSpan = document.getElementById('sizeVal');
-    const mineValSpan = document.getElementById('mineVal');
-    const btnCreate = document.getElementById('btnCreate');
-    const btnCancel = document.getElementById('btnCancel');
-
+    const mapSizeInput = document.getElementById('mapSize'); const mineCountInput = document.getElementById('mineCount');
+    const sizeValSpan = document.getElementById('sizeVal'); const mineValSpan = document.getElementById('mineVal');
+    const btnCreate = document.getElementById('btnCreate'); const btnCancel = document.getElementById('btnCancel');
     const niceColors = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6', '#f43f5e', '#ea580c', '#06b6d4'];
-    
-    const savedName = localStorage.getItem('mineDuelName');
-    const savedColor = localStorage.getItem('mineDuelColor');
-
-    if (savedName) { myNameInput.value = savedName; }
-    if (savedColor) { myColorInput.value = savedColor; } 
-    else { myColorInput.value = niceColors[Math.floor(Math.random() * niceColors.length)]; }
-
+    const savedName = localStorage.getItem('mineDuelName'), savedColor = localStorage.getItem('mineDuelColor');
+    const aiDifficultyInput = document.getElementById('aiDifficulty'); const aiDiffValSpan = document.getElementById('aiDiffVal');
+    aiDifficultyInput.addEventListener('input', () => { aiDiffValSpan.innerText = parseFloat(aiDifficultyInput.value).toFixed(2); });
+    if (savedName) { myNameInput.value = savedName; } if (savedColor) { myColorInput.value = savedColor; } else { myColorInput.value = niceColors[Math.floor(Math.random() * niceColors.length)]; }
     myNameInput.addEventListener('input', (e) => { localStorage.setItem('mineDuelName', e.target.value); });
     myColorInput.addEventListener('input', (e) => { localStorage.setItem('mineDuelColor', e.target.value); });
 
-    function hexToRgb(hex) {
-      const bigint = parseInt(hex.replace('#',''), 16);
-      return [(bigint >> 16) & 255, (bigint >> 8) & 255, bigint & 255];
-    }
-
-    function getColorDistance(hex1, hex2) {
-      const [r1, g1, b1] = hexToRgb(hex1);
-      const [r2, g2, b2] = hexToRgb(hex2);
-      return Math.sqrt(Math.pow(r1 - r2, 2) + Math.pow(g1 - g2, 2) + Math.pow(b1 - b2, 2));
-    }
-
-    function getContrastingColor(hostColor, guestColor) {
-      if (getColorDistance(hostColor, guestColor) >= 120) return guestColor;
-      let bestColor = guestColor;
-      let maxDist = 0;
-      for (let c of niceColors) {
-        let d = getColorDistance(hostColor, c);
-        if (d > maxDist) { maxDist = d; bestColor = c; }
-      }
-      return bestColor;
-    }
+    function hexToRgb(hex) { const bigint = parseInt(hex.replace('#',''), 16); return [(bigint >> 16) & 255, (bigint >> 8) & 255, bigint & 255]; }
+    function getColorDistance(hex1, hex2) { const [r1, g1, b1] = hexToRgb(hex1); const [r2, g2, b2] = hexToRgb(hex2); return Math.sqrt(Math.pow(r1 - r2, 2) + Math.pow(g1 - g2, 2) + Math.pow(b1 - b2, 2)); }
+    function getContrastingColor(hostColor, guestColor) { if (getColorDistance(hostColor, guestColor) >= 120) return guestColor; let bestColor = guestColor, maxDist = 0; for (let c of niceColors) { let d = getColorDistance(hostColor, c); if (d > maxDist) { maxDist = d; bestColor = c; } } return bestColor; }
 
     function updateMineConstraints() {
-      const n = parseInt(mapSizeInput.value);
-      sizeValSpan.innerText = n;
-      const totalCells = n * n;
-      
-      let minLimit = Math.max(3, Math.ceil(totalCells * 0.1));
-      if (minLimit % 2 === 0) minLimit++; 
-      let maxLimit = Math.min(139, Math.floor(totalCells * 0.35));
-      if (maxLimit % 2 === 0) maxLimit--; 
+      const n = parseInt(mapSizeInput.value); sizeValSpan.innerText = n; const totalCells = n * n;
+      let minLimit = Math.max(3, Math.ceil(totalCells * 0.1)); if (minLimit % 2 === 0) minLimit++; 
+      let maxLimit = Math.min(139, Math.floor(totalCells * 0.35)); if (maxLimit % 2 === 0) maxLimit--; 
       if (minLimit > maxLimit) maxLimit = minLimit; 
-      
-      mineCountInput.min = minLimit;
-      mineCountInput.max = maxLimit;
-      mineCountInput.step = 2; 
-
-      let defaultMines = Math.round(totalCells * 0.27);
-      if (defaultMines % 2 === 0) defaultMines++; 
-      
-      if (defaultMines < minLimit) defaultMines = minLimit;
-      if (defaultMines > maxLimit) defaultMines = maxLimit;
-      
-      mineCountInput.value = defaultMines;
-      mineValSpan.innerText = defaultMines;
+      mineCountInput.min = minLimit; mineCountInput.max = maxLimit; mineCountInput.step = 2; 
+      let defaultMines = Math.round(totalCells * 0.27); if (defaultMines % 2 === 0) defaultMines++; 
+      if (defaultMines < minLimit) defaultMines = minLimit; if (defaultMines > maxLimit) defaultMines = maxLimit;
+      mineCountInput.value = defaultMines; mineValSpan.innerText = defaultMines;
     }
+    mapSizeInput.addEventListener('input', updateMineConstraints); mineCountInput.addEventListener('input', () => { mineValSpan.innerText = mineCountInput.value; }); updateMineConstraints();
 
-    mapSizeInput.addEventListener('input', updateMineConstraints);
-    mineCountInput.addEventListener('input', () => { mineValSpan.innerText = mineCountInput.value; });
-    updateMineConstraints();
-
-    let peer = null;
-    let conn = null;
-    let isHost = false;
-    let gameActive = false;
-    let myRoomId = null;
-
+    let peer = null, conn = null, isHost = false, gameActive = false, myRoomId = null;
     let players = { A: { name: 'Player A', color: '#3b82f6' }, B: { name: 'Player B', color: '#ef4444' } };
-    let engine = { size: 12, minesCount: 39, aiMode: 'none', mines: [], numbers: [], revealed: [], owners: [], scoreA: 0, scoreB: 0, turn: 'A', timeMode: 'standard', timeA: 60, timeB: 60, lastMove: null };
-    let clientView = null;
-    let timerInterval = null;
-
-    let lastHeartbeatTime = Date.now();
-    let heartbeatInterval = null;
-    let heartbeatCheckInterval = null;
-    const HEARTBEAT_INTERVAL_MS = 7000; 
-    const HEARTBEAT_TIMEOUT_MS = 15000;  
-
-    let comboCount = 0;
-    let comboPlayer = null;
-
+    let engine = { size: 12, minesCount: 39, aiMode: 'none', mines: [], numbers: [], revealed: [], owners: [], scoreA: 0, scoreB: 0, turn: 'A', timeMode: 'standard', timeA: 60, timeB: 60, lastMove: null, matchLogs: [] };
+    let clientView = null, timerInterval = null, lastHeartbeatTime = Date.now(), heartbeatInterval = null, heartbeatCheckInterval = null;
+    const HEARTBEAT_INTERVAL_MS = 7000, HEARTBEAT_TIMEOUT_MS = 15000;  
+    let comboCount = 0, comboPlayer = null;
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    
-    function playTone(freq, type, duration, vol=0.1) {
-      if (!isSoundOn) return;
-      if (audioCtx.state === 'suspended') audioCtx.resume();
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      osc.type = type;
-      osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-      gain.gain.setValueAtTime(vol, audioCtx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
-      osc.start();
-      osc.stop(audioCtx.currentTime + duration);
-    }
+    function playTone(freq, type, duration, vol=0.1) { if (!isSoundOn) return; if (audioCtx.state === 'suspended') audioCtx.resume(); const osc = audioCtx.createOscillator(), gain = audioCtx.createGain(); osc.type = type; osc.frequency.setValueAtTime(freq, audioCtx.currentTime); gain.gain.setValueAtTime(vol, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration); osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + duration); }
+    function playSoundLocal(type) { if(type === 'safe') { playTone(600, 'sine', 0.1, 0.05); } else if (type === 'mine') { playTone(150, 'square', 0.25, 0.1); } else if (type === 'combo') { setTimeout(() => playTone(400, 'triangle', 0.1, 0.15), 0); setTimeout(() => playTone(500, 'triangle', 0.1, 0.15), 100); setTimeout(() => playTone(650, 'triangle', 0.3, 0.2), 200); } }
+    function triggerSound(type) { playSoundLocal(type); if (conn) conn.send({ type: 'PLAY_SOUND', sound: type }); }
 
-    function playSoundLocal(type) {
-      if(type === 'safe') {
-        playTone(600, 'sine', 0.1, 0.05);
-      } else if (type === 'mine') {
-        playTone(150, 'square', 0.25, 0.1);
-      } else if (type === 'combo') {
-        setTimeout(() => playTone(400, 'triangle', 0.1, 0.15), 0);
-        setTimeout(() => playTone(500, 'triangle', 0.1, 0.15), 100);
-        setTimeout(() => playTone(650, 'triangle', 0.3, 0.2), 200);
-      }
-    }
-
-    function triggerSound(type) {
-      playSoundLocal(type);
-      if (conn) conn.send({ type: 'PLAY_SOUND', sound: type });
-    }
-
-    const lobbyTopic = 'minewar/p2p/lobby_glass_v1';
-    const mqttClient = mqtt.connect('wss://broker.hivemq.com:8884/mqtt');
-    let activeRooms = {};
-    let broadcastInterval = null;
-
+    const lobbyTopic = 'minewar/p2p/lobby_glass_v1'; const mqttClient = mqtt.connect('wss://broker.hivemq.com:8884/mqtt'); let activeRooms = {}, broadcastInterval = null;
     mqttClient.on('connect', () => { mqttClient.subscribe(lobbyTopic); });
-    mqttClient.on('message', (topic, message) => {
-      try {
-        const data = JSON.parse(message.toString());
-        if (data.action === 'add') {
-          if (data.id === myRoomId) return; 
-          if (Object.keys(activeRooms).length >= 50 && !activeRooms[data.id]) return;
-          activeRooms[data.id] = data;
-          activeRooms[data.id].lastSeen = Date.now();
-          renderRoomList();
-        } else if (data.action === 'remove') {
-          delete activeRooms[data.id];
-          renderRoomList();
-        }
-      } catch(e) {}
-    });
-
-    setInterval(() => {
-      const now = Date.now();
-      let changed = false;
-      for (let id in activeRooms) {
-        if (now - activeRooms[id].lastSeen > 10000) { delete activeRooms[id]; changed = true; }
-      }
-      if (changed) renderRoomList();
-    }, 5000);
-
-    function startBroadcastingLobby() {
-      const payload = { 
-        action: 'add', id: myRoomId, hostName: myNameInput.value || "Host", 
-        size: engine.size, mines: engine.minesCount, timeMode: engine.timeMode, aiMode: engine.aiMode 
-      };
-      mqttClient.publish(lobbyTopic, JSON.stringify(payload));
-      broadcastInterval = setInterval(() => { mqttClient.publish(lobbyTopic, JSON.stringify(payload)); }, 4000);
-    }
-    
-    function stopBroadcastingLobby() {
-      if (broadcastInterval) clearInterval(broadcastInterval);
-      if (myRoomId) mqttClient.publish(lobbyTopic, JSON.stringify({ action: 'remove', id: myRoomId }));
-    }
-
+    mqttClient.on('message', (topic, message) => { try { const data = JSON.parse(message.toString()); if (data.action === 'add') { if (data.id === myRoomId) return; if (Object.keys(activeRooms).length >= 50 && !activeRooms[data.id]) return; activeRooms[data.id] = data; activeRooms[data.id].lastSeen = Date.now(); renderRoomList(); } else if (data.action === 'remove') { delete activeRooms[data.id]; renderRoomList(); } } catch(e) {} });
+    setInterval(() => { const now = Date.now(); let changed = false; for (let id in activeRooms) { if (now - activeRooms[id].lastSeen > 10000) { delete activeRooms[id]; changed = true; } } if (changed) renderRoomList(); }, 5000);
+    function startBroadcastingLobby() { const payload = { action: 'add', id: myRoomId, hostName: myNameInput.value || "Host", size: engine.size, mines: engine.minesCount, timeMode: engine.timeMode, aiMode: engine.aiMode }; mqttClient.publish(lobbyTopic, JSON.stringify(payload)); broadcastInterval = setInterval(() => { mqttClient.publish(lobbyTopic, JSON.stringify(payload)); }, 4000); }
+    function stopBroadcastingLobby() { if (broadcastInterval) clearInterval(broadcastInterval); if (myRoomId) mqttClient.publish(lobbyTopic, JSON.stringify({ action: 'remove', id: myRoomId })); }
     window.addEventListener('beforeunload', () => { stopBroadcastingLobby(); });
-
-    function escapeHTML(str) {
-      if (!str) return "";
-      return String(str).replace(/[&<>'"]/g, tag => ({
-        '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
-      }[tag] || tag));
-    }
+    function escapeHTML(str) { return String(str).replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)); }
 
     function renderRoomList() {
-      if (isHost && !gameActive) {
-        roomListContainer.innerHTML = '<p style="font-size:14px; color:#3b82f6; text-align:center; font-weight:bold;">您已建立房間，等待中...</p>';
-        return;
-      }
-      roomListContainer.innerHTML = '';
-      const roomIds = Object.keys(activeRooms);
-      if (roomIds.length === 0) {
-        roomListContainer.innerHTML = '<p style="font-size:13px; color:#94a3b8; text-align:center;">目前沒有公開房間</p>';
-        return;
-      }
-      
-      const timeModeMap = { 'fast': '⚡ 快速', 'standard': '⏳ 標準', 'slow': '🐢 慢速' };
-      const aiModeMap = { 'none': '🚫', '1': '💡1次', '3': '💡3次', 'unlimited': '♾️' };
-
-      roomIds.forEach(id => {
-        const room = activeRooms[id];
-        const card = document.createElement('div');
-        card.className = 'room-card';
-        
-        const safeHostName = escapeHTML(String(room.hostName));
-        const safeSize = parseInt(room.size) || 12; 
-        const safeMines = parseInt(room.mines) || 39; 
-        const safeId = escapeHTML(String(room.id)).replace(/'/g, ""); 
-        const safeTimeMode = timeModeMap[room.timeMode] || '⏳ 標準';
-        const safeAiMode = aiModeMap[room.aiMode] || '🚫';
-
-        card.innerHTML = `
-          <div class="room-info">🎮 ${safeHostName} 的房間</div>
-          <div class="room-settings">📐 ${safeSize}x${safeSize} | 💣 ${safeMines} 顆 | ${safeTimeMode} | AI: ${safeAiMode}</div>
-          <button class="btn-join-room" onclick="joinGame('${safeId}')">加入對戰</button>
-        `;
-        roomListContainer.appendChild(card);
-      });
+      if (isHost && !gameActive) { roomListContainer.innerHTML = '<p style="font-size:14px; color:#3b82f6; text-align:center; font-weight:bold;">您已建立房間，等待中...</p>'; return; }
+      roomListContainer.innerHTML = ''; const roomIds = Object.keys(activeRooms);
+      if (roomIds.length === 0) { roomListContainer.innerHTML = '<p style="font-size:13px; color:#94a3b8; text-align:center;">目前沒有公開房間</p>'; return; }
+      const timeModeMap = { 'fast': '⚡ 快速', 'standard': '⏳ 標準', 'slow': '🐢 慢速' }, aiModeMap = { 'none': '🚫', '1': '💡1次', '3': '💡3次', 'unlimited': '♾️' };
+      roomIds.forEach(id => { const room = activeRooms[id]; const card = document.createElement('div'); card.className = 'room-card'; const safeId = escapeHTML(String(room.id)).replace(/'/g, ""); card.innerHTML = `<div class="room-info">🎮 ${escapeHTML(String(room.hostName))} 的房間</div><div class="room-settings">📐 ${parseInt(room.size) || 12}x${parseInt(room.size) || 12} | 💣 ${parseInt(room.mines) || 39} 顆 | ${timeModeMap[room.timeMode] || '⏳ 標準'} | AI: ${aiModeMap[room.aiMode] || '🚫'}</div><button class="btn-join-room" onclick="joinGame('${safeId}')">加入對戰</button>`; roomListContainer.appendChild(card); });
     }
 
-    function formatTime(seconds) {
-      const m = Math.floor(seconds / 60).toString().padStart(2, '0');
-      const s = (seconds % 60).toString().padStart(2, '0');
-      return `⏳ ${m}:${s}`;
-    }
-
+    function formatTime(seconds) { return `⏳ ${Math.floor(seconds / 60).toString().padStart(2, '0')}:${(seconds % 60).toString().padStart(2, '0')}`; }
     function tickTime() {
       if (!gameActive || !isHost || engine.timeMode === 'none') return; 
-      
       engine['time' + engine.turn]--;
-      if (engine['time' + engine.turn] <= 0) {
-          gameActive = false;
-          if(timerInterval) clearInterval(timerInterval);
-          const winner = engine.turn === 'A' ? 'B' : 'A';
-          if(conn) conn.send({ type: 'GAME_OVER', winner, reason: 'timeout' });
-          showVictory(winner, 'timeout');
-      }
-      
-      updateHUD(engine.turn);
-      if(conn) conn.send({ type: 'TIME_SYNC', timeA: engine.timeA, timeB: engine.timeB });
+      if (engine['time' + engine.turn] <= 0) { gameActive = false; if(timerInterval) clearInterval(timerInterval); const winner = engine.turn === 'A' ? 'B' : 'A'; if(conn) conn.send({ type: 'GAME_OVER', winner, reason: 'timeout' }); showVictory(winner, 'timeout'); }
+      updateHUD(engine.turn); if(conn) conn.send({ type: 'TIME_SYNC', timeA: engine.timeA, timeB: engine.timeB });
     }
 
     function setupConnection(connection) {
       conn = connection;
       conn.on('open', () => {
-        document.getElementById('createPanel').style.opacity = '0.5';
-        document.getElementById('createPanel').style.pointerEvents = 'none';
-
-        conn.send({ type: 'PROFILE', name: myNameInput.value || (isHost?"Host":"Guest"), color: myColorInput.value });
-
-        if(!isHost) {
-          statusText.innerText = "連線成功！等待房主開始...";
-          const lobbyMsg = document.getElementById('lobbyStatusMsg');
-          if (lobbyMsg) lobbyMsg.innerText = "連線成功！等待房主開始...";
-          document.getElementById('btnManualJoin').disabled = true;
-          document.getElementById('btnManualJoin').innerText = "等待中...";
-          
-          overlay.classList.remove('hidden');
-          document.getElementById('overlayTitle').innerText = "連線成功";
-          document.getElementById('overlayDesc').innerText = "等待房主初始化遊戲...";
-        } else {
-          statusText.innerText = "連線成功！";
-          stopBroadcastingLobby();
-          privateCodeDisplay.style.display = 'none';
-          btnCancel.style.display = 'none'; 
-        }
-
-        lastHeartbeatTime = Date.now();
-        heartbeatInterval = setInterval(() => {
-          if (conn && conn.open) conn.send({ type: 'PING' });
-        }, HEARTBEAT_INTERVAL_MS);
-
-        heartbeatCheckInterval = setInterval(() => {
-          if (!gameActive && (engine.scoreA > 0 || engine.scoreB > 0)) {
-            clearInterval(heartbeatInterval);
-            clearInterval(heartbeatCheckInterval);
-            return;
-          }
-          if (Date.now() - lastHeartbeatTime > HEARTBEAT_TIMEOUT_MS) {
-            clearInterval(heartbeatInterval);
-            clearInterval(heartbeatCheckInterval);
-            alert("連線逾時，對方已失去連線（超過 15 秒無回應）！");
-            location.reload();
-          }
-        }, 5000); 
+        disablePanels(); conn.send({ type: 'PROFILE', name: myNameInput.value || (isHost?"Host":"Guest"), color: myColorInput.value });
+        if(!isHost) { statusText.innerText = "連線成功！等待房主開始..."; const lobbyMsg = document.getElementById('lobbyStatusMsg'); if (lobbyMsg) lobbyMsg.innerText = "連線成功！等待房主開始..."; document.getElementById('btnManualJoin').disabled = true; document.getElementById('btnManualJoin').innerText = "等待中..."; overlay.classList.remove('hidden'); document.getElementById('overlayTitle').innerText = "連線成功"; document.getElementById('overlayDesc').innerText = "等待房主初始化遊戲..."; } 
+        else { statusText.innerText = "連線成功！"; stopBroadcastingLobby(); privateCodeDisplay.style.display = 'none'; btnCancel.style.display = 'none'; }
+        lastHeartbeatTime = Date.now(); heartbeatInterval = setInterval(() => { if (conn && conn.open) conn.send({ type: 'PING' }); }, HEARTBEAT_INTERVAL_MS);
+        heartbeatCheckInterval = setInterval(() => { if (!gameActive && (engine.scoreA > 0 || engine.scoreB > 0)) { clearInterval(heartbeatInterval); clearInterval(heartbeatCheckInterval); return; } if (Date.now() - lastHeartbeatTime > HEARTBEAT_TIMEOUT_MS) { clearInterval(heartbeatInterval); clearInterval(heartbeatCheckInterval); alert("連線逾時，對方已失去連線（超過 15 秒無回應）！"); location.reload(); } }, 5000); 
       });
-
       conn.on('data', handleNetworkData);
-      
-      conn.on('close', () => { 
-        clearInterval(heartbeatInterval);
-        clearInterval(heartbeatCheckInterval);
-        if (!gameActive && (engine.scoreA > 0 || engine.scoreB > 0)) return; 
-        alert("對方已斷開連線！"); 
-        location.reload(); 
-      });
+      conn.on('close', () => { clearInterval(heartbeatInterval); clearInterval(heartbeatCheckInterval); if (!gameActive && (engine.scoreA > 0 || engine.scoreB > 0)) return; alert("對方已斷開連線！"); location.reload(); });
     }
 
- function handleNetworkData(data) {
-      lastHeartbeatTime = Date.now();
-
-      if (data.type === 'PING') return; 
-
+    function handleNetworkData(data) {
+      lastHeartbeatTime = Date.now(); if (data.type === 'PING') return; 
       if (data.type === 'PROFILE') {
-        if (isHost) {
-          let finalGuestColor = getContrastingColor(players.A.color, data.color);
-          players.B = { name: data.name, color: finalGuestColor };
-          conn.send({ type: 'PROFILE', name: players.A.name, color: players.A.color, overrideColor: finalGuestColor });
-          setTimeout(() => { startGameEngine(); }, 300);
-        } else { 
-          players.A = { name: data.name, color: data.color }; 
-          if (data.overrideColor) {
-            players.B.color = data.overrideColor;
-            myColorInput.value = data.overrideColor; 
-            localStorage.setItem('mineDuelColor', data.overrideColor); 
-          }
-        }
+        if (isHost) { let finalGuestColor = getContrastingColor(players.A.color, data.color); players.B = { name: data.name, color: finalGuestColor }; conn.send({ type: 'PROFILE', name: players.A.name, color: players.A.color, overrideColor: finalGuestColor }); setTimeout(() => { startGameEngine(); }, 300); } 
+        else { players.A = { name: data.name, color: data.color }; if (data.overrideColor) { players.B.color = data.overrideColor; myColorInput.value = data.overrideColor; localStorage.setItem('mineDuelColor', data.overrideColor); } }
         updateHUD();
       } 
       else if (data.type === 'GAME_SYNC') {
-        clientView = data; 
-        let newlyStarted = data.gameActive && !gameActive;
-        gameActive = data.gameActive; // 修正: 提前更新 gameActive 狀態
-
-        if(newlyStarted) {
-           engine.aiMode = data.aiMode;
-           if (engine.aiMode === '1') myAiUsesLeft = 1;
-           else if (engine.aiMode === '3') myAiUsesLeft = 3;
-           else if (engine.aiMode === 'unlimited') myAiUsesLeft = 999;
-           else myAiUsesLeft = 0;
-           
-           document.body.classList.add('game-on');
-           hideOverlay();
-           updateAIBtnUI(); // 此時 gameActive 為 true，按鈕可正確顯示
-        }
-        
-        // 1. 同步玩家分數 (解決客機比分落後無法開啟 AI 的問題)
-        players.A.score = data.scoreA; players.B.score = data.scoreB;
-        engine.scoreA = data.scoreA;
-        engine.scoreB = data.scoreB; 
-
-        // ----------------- 2. 同步地圖數據 (解決客機 AI 算法機率計算錯誤的問題) -----------------
-        engine.size = data.size;
-        let total = data.size * data.size;
-        
-        // 確保客機引擎有對應長度的地圖陣列
-        engine.revealed = Array(total).fill(false);
-        engine.mines = Array(total).fill(false);
-        engine.numbers = Array(total).fill(0);
-        engine.owners = Array(total).fill(null);
-
-        // 將房主傳來的地圖格子狀態，一格一格塞入客機引擎中，讓 AI 演算法有資料可以算
-        if (data.cells) {
-          for (let i = 0; i < total; i++) {
-            let c = data.cells[i];
-            if (c && c.r) { // 如果該格子已經被翻開
-              engine.revealed[i] = true;
-              engine.mines[i] = c.m;    // 是否是地雷
-              engine.numbers[i] = c.n;  // 周遭地雷數字
-              engine.owners[i] = c.o;   // 佔領者
-            }
-          }
-        }
-        // 修改後：
-        engine.timeMode = data.timeMode; engine.timeA = data.timeA; engine.timeB = data.timeB;
-        engine.minesCount = data.minesCount; 
-        
-        // 客機收到新盤面同步後，若 AI 開啟則立即重算機率
-        if (isAIToggledOn && gameActive) {
-          calculateAIProbabilities();
-        }
-
+        clientView = data; let newlyStarted = data.gameActive && !gameActive; gameActive = data.gameActive; 
+        if (data.matchLogs) engine.matchLogs = data.matchLogs;
+        if(newlyStarted) { engine.aiMode = data.aiMode; if (engine.aiMode === '1') myAiUsesLeft = 1; else if (engine.aiMode === '3') myAiUsesLeft = 3; else if (engine.aiMode === 'unlimited') myAiUsesLeft = 999; else myAiUsesLeft = 0; document.body.classList.add('game-on'); hideOverlay(); updateAIBtnUI(); }
+        players.A.score = data.scoreA; players.B.score = data.scoreB; engine.scoreA = data.scoreA; engine.scoreB = data.scoreB; 
+        engine.size = data.size; let total = data.size * data.size; engine.revealed = Array(total).fill(false); engine.mines = Array(total).fill(false); engine.numbers = Array(total).fill(0); engine.owners = Array(total).fill(null);
+        if (data.cells) { for (let i = 0; i < total; i++) { let c = data.cells[i]; if (c && c.r) { engine.revealed[i] = true; engine.mines[i] = c.m; engine.numbers[i] = c.n; engine.owners[i] = c.o; } } }
+        engine.timeMode = data.timeMode; engine.timeA = data.timeA; engine.timeB = data.timeB; engine.minesCount = data.minesCount; 
+        if (isAIToggledOn && gameActive) calculateAIProbabilities();
         updateHUD(data.turn); drawBoard();
       }
+      else if (data.type === 'TIME_SYNC') { engine.timeA = data.timeA; engine.timeB = data.timeB; updateHUD(clientView ? clientView.turn : 'A'); }
+      else if (data.type === 'CLICK') { if (isHost && engine.turn === 'B') processClick(data.x, data.y, 'B'); }
+      else if (data.type === 'PLAY_SOUND') { playSoundLocal(data.sound); }
+      else if (data.type === 'GAME_OVER') { gameActive = false; if(timerInterval) clearInterval(timerInterval); showVictory(data.winner, data.reason); }
+    }
 
-      else if (data.type === 'TIME_SYNC') {
-        engine.timeA = data.timeA; engine.timeB = data.timeB;
-        updateHUD(clientView ? clientView.turn : 'A');
-      }
-      else if (data.type === 'CLICK') {
-        if (isHost && engine.turn === 'B') processClick(data.x, data.y, 'B');
-      }
-      else if (data.type === 'PLAY_SOUND') {
-        playSoundLocal(data.sound);
-      }
-      else if (data.type === 'GAME_OVER') {
-        gameActive = false; 
-        if(timerInterval) clearInterval(timerInterval); 
-        showVictory(data.winner, data.reason);
-      }
-}
-
-    btnCancel.addEventListener('click', () => {
-      stopBroadcastingLobby();
-      if (peer) { peer.destroy(); peer = null; }
-      if (conn) { conn.close(); conn = null; }
-      clearInterval(heartbeatInterval); clearInterval(heartbeatCheckInterval);
-      isHost = false;
-      btnCreate.style.display = 'block'; btnCreate.disabled = false;
-      btnCancel.style.display = 'none'; statusText.innerText = "準備就緒";
-      privateCodeDisplay.style.display = 'none';
-      renderRoomList();
-    });
-
-    const generateUniqueCode = () => {
-      const timePart = Date.now().toString(36).slice(-3);
-      const randPart = Math.random().toString(36).substring(2, 5);
-      return (timePart + randPart).toUpperCase();
-    };
+    btnCancel.addEventListener('click', () => { stopBroadcastingLobby(); if (peer) { peer.destroy(); peer = null; } if (conn) { conn.close(); conn = null; } clearInterval(heartbeatInterval); clearInterval(heartbeatCheckInterval); isHost = false; btnCreate.style.display = 'block'; btnCreate.disabled = false; btnCancel.style.display = 'none'; statusText.innerText = "準備就緒"; privateCodeDisplay.style.display = 'none'; renderRoomList(); });
+    const generateUniqueCode = () => { const timePart = Date.now().toString(36).slice(-3); const randPart = Math.random().toString(36).substring(2, 5); return (timePart + randPart).toUpperCase(); };
 
     btnCreate.addEventListener('click', () => {
       if (audioCtx.state === 'suspended') audioCtx.resume(); 
-      isHost = true; isPracticeMode = false;
+      isHost = true; isPracticeMode = false; isAIMode = false;
       players.A = { name: myNameInput.value || "Host", color: myColorInput.value };
-      engine.size = parseInt(document.getElementById('mapSize').value);
-      engine.minesCount = parseInt(document.getElementById('mineCount').value);
-      engine.timeMode = document.getElementById('timeMode').value;
-      engine.aiMode = document.getElementById('aiModeSelect').value;
-      
+      engine.size = parseInt(document.getElementById('mapSize').value); engine.minesCount = parseInt(document.getElementById('mineCount').value);
+      engine.timeMode = document.getElementById('timeMode').value; engine.aiMode = document.getElementById('aiModeSelect').value;
       const isPrivate = document.getElementById('roomPrivacy').value === 'private';
       myRoomId = isPrivate ? generateUniqueCode() : Math.random().toString(36).substring(2, 10).toUpperCase();
-
-      btnCreate.style.display = 'none'; btnCancel.style.display = 'block'; 
-      statusText.innerText = "建立房間中...";
-
-      const peerConfig = {
-        config: {
-          'iceServers': [
-            { urls: 'stun:stun.l.google.com:19302' },
-            { urls: 'stun:stun1.l.google.com:19302' },
-            { urls: 'stun:stun2.l.google.com:19302' }
-          ]
-        }
-      };
+      btnCreate.style.display = 'none'; btnCancel.style.display = 'block'; statusText.innerText = "建立房間中...";
+      const peerConfig = { config: { 'iceServers': [ { urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' } ] } };
       peer = new Peer(myRoomId, peerConfig);
-
-      peer.on('open', (id) => {
-        if (isPrivate) {
-          statusText.innerText = "請將此代碼交給對手";
-          privateCodeDisplay.innerText = myRoomId; privateCodeDisplay.style.display = 'block';
-        } else {
-          statusText.innerText = "正在大廳廣播中..."; startBroadcastingLobby();
-        }
-        renderRoomList();
-      });
+      peer.on('open', (id) => { if (isPrivate) { statusText.innerText = "請將此代碼交給對手"; privateCodeDisplay.innerText = myRoomId; privateCodeDisplay.style.display = 'block'; } else { statusText.innerText = "正在大廳廣播中..."; startBroadcastingLobby(); } renderRoomList(); });
       peer.on('connection', (connection) => { setupConnection(connection); });
     });
 
-    document.getElementById('btnManualJoin').addEventListener('click', () => {
-      if (audioCtx.state === 'suspended') audioCtx.resume(); 
-      const code = document.getElementById('manualJoinCode').value.toUpperCase().trim();
-      if (!code) return alert('請輸入房間代碼');
-      joinGame(code);
-    });
+    document.getElementById('btnManualJoin').addEventListener('click', () => { if (audioCtx.state === 'suspended') audioCtx.resume(); const code = document.getElementById('manualJoinCode').value.toUpperCase().trim(); if (!code) return alert('請輸入房間代碼'); joinGame(code); });
 
     window.joinGame = function(targetId) {
       if (audioCtx.state === 'suspended') audioCtx.resume(); 
-      isHost = false; isPracticeMode = false;
-      players.B = { name: myNameInput.value || "Guest", color: myColorInput.value };
+      isHost = false; isPracticeMode = false; isAIMode = false; players.B = { name: myNameInput.value || "Guest", color: myColorInput.value };
       btnCreate.disabled = true; statusText.innerText = "連線中...";
-      
-      const peerConfig = {
-        config: {
-          'iceServers': [
-            { urls: 'stun:stun.l.google.com:19302' },
-            { urls: 'stun:stun1.l.google.com:19302' },
-            { urls: 'stun:stun2.l.google.com:19302' }
-          ]
-        }
-      };
-      peer = new Peer(peerConfig);
-
-      let joinTimeout = setTimeout(() => {
-        if (!conn || !conn.open) {
-          alert("連線建立失敗 (超時)！\n這通常是因為您或對手的網路環境 (如公司/學校防火牆或部分手機 4G) 阻擋了 P2P 連線。");
-          location.reload();
-        }
-      }, 12000);
-
-      peer.on('open', () => {
-        const connection = peer.connect(targetId, { reliable: true });
-        setupConnection(connection);
-        
-        connection.on('open', () => {
-          clearTimeout(joinTimeout); 
-        });
-      });
-      
-      peer.on('error', (err) => { 
-        clearTimeout(joinTimeout);
-        alert("無法連線，代碼錯誤或對手已關閉房間。"); 
-        location.reload(); 
-      });
+      const peerConfig = { config: { 'iceServers': [ { urls: 'stun:stun.l.google.com:19302' } ] } }; peer = new Peer(peerConfig);
+      let joinTimeout = setTimeout(() => { if (!conn || !conn.open) { alert("連線建立失敗！"); location.reload(); } }, 12000);
+      peer.on('open', () => { const connection = peer.connect(targetId, { reliable: true }); setupConnection(connection); connection.on('open', () => { clearTimeout(joinTimeout); }); });
+      peer.on('error', (err) => { clearTimeout(joinTimeout); alert("無法連線"); location.reload(); });
     }
 
     function startGameEngine() {
-      const total = engine.size * engine.size;
-      engine.mines = Array(total).fill(false); engine.numbers = Array(total).fill(0);
-      engine.revealed = Array(total).fill(false); engine.owners = Array(total).fill(null);
-      engine.scoreA = 0; engine.scoreB = 0;
-
-      let baseTime = 0;
-      if (engine.timeMode === 'fast') baseTime = 20;
-      else if (engine.timeMode === 'standard') baseTime = 60;
-      else if (engine.timeMode === 'slow') baseTime = 120;
-      
-      engine.timeA = baseTime; engine.timeB = baseTime;
-      comboCount = 0; comboPlayer = null; 
-
-      if (engine.aiMode === '1') myAiUsesLeft = 1;
-      else if (engine.aiMode === '3') myAiUsesLeft = 3;
-      else if (engine.aiMode === 'unlimited') myAiUsesLeft = 999;
-      else myAiUsesLeft = 0;
-
-      engine.turn = Math.random() < 0.5 ? 'A' : 'B';
-      engine.lastMove = null; 
-      gameActive = true;
-      document.body.classList.add('game-on'); 
-
-      let placed = 0;
-      while (placed < engine.minesCount) {
-        let idx = Math.floor(Math.random() * total);
-        if (!engine.mines[idx]) { engine.mines[idx] = true; placed++; }
-      }
-      for (let y = 0; y < engine.size; y++) {
-        for (let x = 0; x < engine.size; x++) {
-          let idx = y * engine.size + x;
-          if (engine.mines[idx]) continue;
-          let count = 0;
-          for (let dy = -1; dy <= 1; dy++) {
-            for (let dx = -1; dx <= 1; dx++) {
-              let ny = y + dy, nx = x + dx;
-              if (ny >= 0 && ny < engine.size && nx >= 0 && nx < engine.size && engine.mines[ny * engine.size + nx]) count++;
-            }
-          }
-          engine.numbers[idx] = count;
-        }
-      }
-      
-      if (timerInterval) clearInterval(timerInterval);
-      if (engine.timeMode !== 'none') {
-        timerInterval = setInterval(tickTime, 1000);
-      }
-
+      const total = engine.size * engine.size; engine.mines = Array(total).fill(false); engine.numbers = Array(total).fill(0); engine.revealed = Array(total).fill(false); engine.owners = Array(total).fill(null);
+      engine.scoreA = 0; engine.scoreB = 0; engine.matchLogs = []; 
+      let baseTime = 0; if (engine.timeMode === 'fast') baseTime = 20; else if (engine.timeMode === 'standard') baseTime = 60; else if (engine.timeMode === 'slow') baseTime = 120;
+      engine.timeA = baseTime; engine.timeB = baseTime; comboCount = 0; comboPlayer = null; 
+      if (engine.aiMode === '1') myAiUsesLeft = 1; else if (engine.aiMode === '3') myAiUsesLeft = 3; else if (engine.aiMode === 'unlimited') myAiUsesLeft = 999; else myAiUsesLeft = 0;
+      engine.turn = Math.random() < 0.5 ? 'A' : 'B'; engine.lastMove = null; gameActive = true; document.body.classList.add('game-on'); 
+      let placed = 0; while (placed < engine.minesCount) { let idx = Math.floor(Math.random() * total); if (!engine.mines[idx]) { engine.mines[idx] = true; placed++; } }
+      for (let y = 0; y < engine.size; y++) { for (let x = 0; x < engine.size; x++) { let idx = y * engine.size + x; if (engine.mines[idx]) continue; let count = 0; for (let dy = -1; dy <= 1; dy++) { for (let dx = -1; dx <= 1; dx++) { let ny = y + dy, nx = x + dx; if (ny >= 0 && ny < engine.size && nx >= 0 && nx < engine.size && engine.mines[ny * engine.size + nx]) count++; } } engine.numbers[idx] = count; } }
+      if (timerInterval) clearInterval(timerInterval); if (engine.timeMode !== 'none') { timerInterval = setInterval(tickTime, 1000); }
       if (isPracticeMode && isAIToggledOn) calculateAIProbabilities();
-
-      updateAIBtnUI();
-      updateHUD(engine.turn); drawBoard(); syncToGuest(); hideOverlay();
+      updateAIBtnUI(); updateHUD(engine.turn); drawBoard(); syncToGuest(); hideOverlay();
     }
 
     function processClick(x, y, playerRole) {
       if (!gameActive || engine.turn !== playerRole) return;
       if (typeof x !== 'number' || typeof y !== 'number') return;
       if (x < 0 || x >= engine.size || y < 0 || y >= engine.size) return;
+      const idx = y * engine.size + x; if (engine.revealed[idx]) return;
 
-      const idx = y * engine.size + x;
-      if (engine.revealed[idx]) return;
+      calculateAIProbabilities(); let maxProb = 0;
+      for (let i = 0; i < engine.size * engine.size; i++) { if (!engine.revealed[i] && aiProbabilities[i] !== null && aiProbabilities[i] > maxProb) { maxProb = aiProbabilities[i]; } }
+      let clickProb = aiProbabilities[idx] !== null ? aiProbabilities[idx] : 0; let delta = maxProb - clickProb; let category = "Best Move";
+      if (maxProb > 0 && clickProb < 0.001) category = "Blunder"; else if (maxProb > 0.999 && clickProb < 0.999) category = "Missed Mine"; else if (delta > 0.001) category = "Inaccuracy";
 
-      engine.revealed[idx] = true;
-      engine.lastMove = { x: x, y: y, p: playerRole }; 
+      let snap = null; if (category === 'Blunder' || category === 'Missed Mine') { snap = { rev: [...engine.revealed], own: [...engine.owners], probs: [...aiProbabilities] }; }
+      engine.matchLogs.push({ p: playerRole, t: engine.matchLogs.length + 1, x: x, y: y, cp: clickProb, mp: maxProb, d: delta, cat: category, mine: engine.mines[idx], snap: snap });
+      engine.revealed[idx] = true; engine.lastMove = { x: x, y: y, p: playerRole }; 
 
       if (engine.mines[idx]) {
-        engine.owners[idx] = playerRole;
-        if (playerRole === 'A') engine.scoreA++; else engine.scoreB++;
-        
-        if (engine.timeMode === 'fast') engine['time' + playerRole] += 2;
-        else if (engine.timeMode === 'standard') engine['time' + playerRole] += 3;
-        else if (engine.timeMode === 'slow') engine['time' + playerRole] += 4;
-
-        if(comboPlayer === playerRole) { comboCount++; } 
-        else { comboPlayer = playerRole; comboCount = 1; }
-
+        engine.owners[idx] = playerRole; if (playerRole === 'A') engine.scoreA++; else engine.scoreB++;
+        if (engine.timeMode === 'fast') engine['time' + playerRole] += 2; else if (engine.timeMode === 'standard') engine['time' + playerRole] += 3; else if (engine.timeMode === 'slow') engine['time' + playerRole] += 4;
+        if(comboPlayer === playerRole) { comboCount++; } else { comboPlayer = playerRole; comboCount = 1; }
         if (comboCount >= 3) { triggerSound('combo'); } else { triggerSound('mine'); }
-
         const winThreshold = Math.ceil(engine.minesCount / 2);
-        if (engine.scoreA >= winThreshold || engine.scoreB >= winThreshold) {
-          gameActive = false;
-          if(timerInterval) clearInterval(timerInterval); 
-          const winner = engine.scoreA > engine.scoreB ? 'A' : 'B';
-          if(conn) conn.send({ type: 'GAME_OVER', winner, reason: 'score' });
-          showVictory(winner, 'score');
-        }
+        if (engine.scoreA >= winThreshold || engine.scoreB >= winThreshold) { gameActive = false; if(timerInterval) clearInterval(timerInterval); const winner = engine.scoreA > engine.scoreB ? 'A' : 'B'; if(conn) conn.send({ type: 'GAME_OVER', winner, reason: 'score' }); showVictory(winner, 'score'); }
       } else {
         if (engine.numbers[idx] === 0) revealZeros(x, y);
-        
-        comboCount = 0; 
-        triggerSound('safe');
-
-        if (engine.timeMode === 'fast') engine['time' + playerRole] += 2;
-        else if (engine.timeMode === 'standard') engine['time' + playerRole] += 3;
-        else if (engine.timeMode === 'slow') engine['time' + playerRole] += 4;
-        
+        comboCount = 0; triggerSound('safe');
+        if (engine.timeMode === 'fast') engine['time' + playerRole] += 2; else if (engine.timeMode === 'standard') engine['time' + playerRole] += 3; else if (engine.timeMode === 'slow') engine['time' + playerRole] += 4;
         engine.turn = (playerRole === 'A') ? 'B' : 'A';
       }
-
-     if (isAIToggledOn && gameActive) {
-        calculateAIProbabilities();
-      }
-
+      if (isAIToggledOn && gameActive) calculateAIProbabilities();
       updateHUD(engine.turn); drawBoard(); syncToGuest();
+      if (gameActive && isAIMode && engine.turn === 'B') setTimeout(makeAIMove, 800);
     }
 
-    function revealZeros(startX, startY) {
-      let q = [[startX, startY]];
-      while (q.length > 0) {
-        let [cx, cy] = q.shift();
-        for (let dy = -1; dy <= 1; dy++) {
-          for (let dx = -1; dx <= 1; dx++) {
-            let nx = cx + dx, ny = cy + dy;
-            if (nx >= 0 && nx < engine.size && ny >= 0 && ny < engine.size) {
-              let nIdx = ny * engine.size + nx;
-              if (!engine.revealed[nIdx]) {
-                engine.revealed[nIdx] = true;
-                if (engine.numbers[nIdx] === 0) q.push([nx, ny]);
-              }
-            }
-          }
-        }
-      }
-    }
+    function revealZeros(startX, startY) { let q = [[startX, startY]]; while (q.length > 0) { let [cx, cy] = q.shift(); for (let dy = -1; dy <= 1; dy++) { for (let dx = -1; dx <= 1; dx++) { let nx = cx + dx, ny = cy + dy; if (nx >= 0 && nx < engine.size && ny >= 0 && ny < engine.size) { let nIdx = ny * engine.size + nx; if (!engine.revealed[nIdx]) { engine.revealed[nIdx] = true; if (engine.numbers[nIdx] === 0) q.push([nx, ny]); } } } } } }
 
     function syncToGuest() {
-      if (!isHost || !conn) return;
-      const total = engine.size * engine.size;
-      const cells = [];
-      for (let i = 0; i < total; i++) {
-        if (engine.revealed[i]) {
-          cells.push({ r: true, m: engine.mines[i], o: engine.owners[i], n: engine.numbers[i] });
-        } else { cells.push({ r: false }); }
-      }
-      conn.send({
-        type: 'GAME_SYNC', gameActive: gameActive, size: engine.size, minesCount: engine.minesCount,
-        scoreA: engine.scoreA, scoreB: engine.scoreB, turn: engine.turn, 
-        timeMode: engine.timeMode, timeA: engine.timeA, timeB: engine.timeB,
-        aiMode: engine.aiMode, 
-        lastMove: engine.lastMove,
-        cells: cells
-      });
+      if (!isHost || !conn) return; const total = engine.size * engine.size; const cells = [];
+      for (let i = 0; i < total; i++) { if (engine.revealed[i]) { cells.push({ r: true, m: engine.mines[i], o: engine.owners[i], n: engine.numbers[i] }); } else { cells.push({ r: false }); } }
+      conn.send({ type: 'GAME_SYNC', gameActive: gameActive, size: engine.size, minesCount: engine.minesCount, scoreA: engine.scoreA, scoreB: engine.scoreB, turn: engine.turn, timeMode: engine.timeMode, timeA: engine.timeA, timeB: engine.timeB, aiMode: engine.aiMode, lastMove: engine.lastMove, cells: cells, matchLogs: engine.matchLogs });
     }
 
     canvas.addEventListener('click', (e) => {
-      if (!gameActive) return;
-      if (audioCtx.state === 'suspended') audioCtx.resume();
-      
-      const rect = canvas.getBoundingClientRect();
-      const currentSize = isHost ? engine.size : (clientView ? clientView.size : 12);
-      const cellSize = BOARD_PIXEL / currentSize;
-      const x = Math.floor((e.clientX - rect.left) / (rect.width / BOARD_PIXEL) / cellSize);
-      const y = Math.floor((e.clientY - rect.top) / (rect.height / BOARD_PIXEL) / cellSize);
-
-      // 檢查是否需自動關閉 AI (點擊畫面即消耗次數並關閉)
-      if (isAIToggledOn && !isPracticeMode && (engine.aiMode === '1' || engine.aiMode === '3')) {
-        isAIToggledOn = false;
-        btnToggleAI.classList.remove('active');
-        aiProbabilities = Array(engine.size * engine.size).fill(null);
-        updateAIBtnUI();
-        drawBoard();
-      }
-
-      if (isPracticeMode) {
-        processClick(x, y, engine.turn);
-      } else if (isHost) {
-        if (engine.turn === 'A') processClick(x, y, 'A');
-      } else {
-        if (clientView && clientView.turn === 'B') conn.send({ type: 'CLICK', x, y });
-      }
+      if (!gameActive) return; if (audioCtx.state === 'suspended') audioCtx.resume();
+      const rect = canvas.getBoundingClientRect(); const currentSize = isHost ? engine.size : (clientView ? clientView.size : 12); const cellSize = BOARD_PIXEL / currentSize;
+      const x = Math.floor((e.clientX - rect.left) / (rect.width / BOARD_PIXEL) / cellSize); const y = Math.floor((e.clientY - rect.top) / (rect.height / BOARD_PIXEL) / cellSize);
+      if (isAIToggledOn && !isPracticeMode && (engine.aiMode === '1' || engine.aiMode === '3')) { isAIToggledOn = false; btnToggleAI.classList.remove('active'); aiProbabilities = Array(engine.size * engine.size).fill(null); updateAIBtnUI(); drawBoard(); }
+      if (isAIMode && engine.turn === 'B') return;
+      if (isPracticeMode) { processClick(x, y, engine.turn); } else if (isHost) { if (engine.turn === 'A') processClick(x, y, 'A'); } else { if (clientView && clientView.turn === 'B') conn.send({ type: 'CLICK', x, y }); }
     });
 
-    function drawRoundedRect(ctx, x, y, width, height, radius) {
-      ctx.beginPath();
-      ctx.moveTo(x + radius, y);
-      ctx.lineTo(x + width - radius, y);
-      ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
-      ctx.lineTo(x + width, y + height - radius);
-      ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
-      ctx.lineTo(x + radius, y + height);
-      ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
-      ctx.lineTo(x, y + radius);
-      ctx.quadraticCurveTo(x, y, x + radius, y);
-      ctx.closePath();
-    }
+    function drawRoundedRect(ctx, x, y, width, height, radius) { ctx.beginPath(); ctx.moveTo(x + radius, y); ctx.lineTo(x + width - radius, y); ctx.quadraticCurveTo(x + width, y, x + width, y + radius); ctx.lineTo(x + width, y + height - radius); ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height); ctx.lineTo(x + radius, y + height); ctx.quadraticCurveTo(x, y + height, x, y + height - radius); ctx.lineTo(x, y + radius); ctx.quadraticCurveTo(x, y, x + radius, y); ctx.closePath(); }
 
     function drawBoard() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      const grid = isHost ? engine.size : (clientView ? clientView.size : 12);
-      if (!grid) return;
-      const cellSize = BOARD_PIXEL / grid;
-
-      for (let y = 0; y < grid; y++) {
-        for (let x = 0; x < grid; x++) {
-          let idx = y * grid + x;
-          let cellX = x * cellSize, cellY = y * cellSize;
-          
-          let rev, mine, owner, num;
-          let isLastMove = false;
-          let lastP = null;
-          
-          if (isHost) {
-            rev = engine.revealed[idx]; mine = engine.mines[idx]; owner = engine.owners[idx]; num = engine.numbers[idx];
-            if (engine.lastMove && engine.lastMove.x === x && engine.lastMove.y === y) {
-              isLastMove = true; lastP = engine.lastMove.p;
-            }
-          } else {
-            if(!clientView) return;
-            let c = clientView.cells[idx];
-            rev = c.r; mine = c.m; owner = c.o; num = c.n;
-            if (clientView.lastMove && clientView.lastMove.x === x && clientView.lastMove.y === y) {
-              isLastMove = true; lastP = clientView.lastMove.p;
-            }
-          }
-
-          const pad = 2; 
-          const cx = cellX + pad;
-          const cy = cellY + pad;
-          const cw = cellSize - pad * 2;
-          const ch = cellSize - pad * 2;
-          const radius = Math.max(3, cw * 0.15); 
-
+      const grid = isHost ? engine.size : (clientView ? clientView.size : 12); if (!grid) return; const cellSize = BOARD_PIXEL / grid;
+      for (let y = 0; y < grid; y++) { for (let x = 0; x < grid; x++) { let idx = y * grid + x; let cellX = x * cellSize, cellY = y * cellSize; let rev, mine, owner, num; let isLastMove = false, lastP = null;
+          if (isHost) { rev = engine.revealed[idx]; mine = engine.mines[idx]; owner = engine.owners[idx]; num = engine.numbers[idx]; if (engine.lastMove && engine.lastMove.x === x && engine.lastMove.y === y) { isLastMove = true; lastP = engine.lastMove.p; }
+          } else { if(!clientView) return; let c = clientView.cells[idx]; rev = c.r; mine = c.m; owner = c.o; num = c.n; if (clientView.lastMove && clientView.lastMove.x === x && clientView.lastMove.y === y) { isLastMove = true; lastP = clientView.lastMove.p; } }
+          const pad = 2, cx = cellX + pad, cy = cellY + pad, cw = cellSize - pad * 2, ch = cellSize - pad * 2, radius = Math.max(3, cw * 0.15); 
           if (!rev) {
-            if (isAIToggledOn && aiProbabilities[idx] !== null && gameActive) {
-              ctx.fillStyle = '#ffffff';
-              drawRoundedRect(ctx, cx, cy, cw, ch, radius);
-              ctx.fill();
-
-              ctx.strokeStyle = 'rgba(0, 0, 0, 0.15)';
-              ctx.lineWidth = 1;
-              drawRoundedRect(ctx, cx, cy, cw, ch, radius);
-              ctx.stroke();
-
-              let prob = aiProbabilities[idx];
-              let percentVal = Math.round(prob * 100);
-              let textColor = '';
-
-              if (percentVal < 50) {
-                let alpha = 0.3 + (percentVal / 50) * 0.7;
-                textColor = `rgba(0, 0, 0, ${alpha})`;
-              } else if (percentVal === 50) {
-                textColor = '#ff9800'; 
-              } else {
-                let alpha = percentVal / 100;
-                alpha = Math.max(0.3, alpha); 
-                textColor = `rgba(255, 0, 0, ${alpha})`;
-              }
-
-              let baseFontSize = ch * 0.40; 
-              let fontScale = 0.3 + (prob * 1.2); 
-              let finalFontSize = baseFontSize * fontScale;
-
-              ctx.fillStyle = textColor;
-              ctx.font = `bold ${finalFontSize}px Arial`;
-              ctx.textAlign = 'center'; 
-              ctx.textBaseline = 'middle';
-              ctx.shadowBlur = 0; 
-              
-              ctx.fillText(`${percentVal}`, cx + cw/2, cy + ch/2 + (finalFontSize * 0.05));
-
-            } else {
-              const grad = ctx.createLinearGradient(cx, cy, cx, cy + ch);
-              grad.addColorStop(0, 'rgba(255, 255, 255, 0.85)');
-              grad.addColorStop(1, 'rgba(255, 255, 255, 0.3)');
-              ctx.fillStyle = grad;
-              drawRoundedRect(ctx, cx, cy, cw, ch, radius);
-              ctx.fill();
-
-              ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
-              ctx.lineWidth = 1.5;
-              drawRoundedRect(ctx, cx + 1, cy + 1, cw - 2, ch - 2, radius);
-              ctx.stroke();
-
-              ctx.strokeStyle = 'rgba(0, 0, 0, 0.08)';
-              ctx.lineWidth = 1;
-              drawRoundedRect(ctx, cx, cy, cw, ch, radius);
-              ctx.stroke();
-            }
-
+            if (isAIToggledOn && aiProbabilities[idx] !== null) { ctx.fillStyle = '#ffffff'; drawRoundedRect(ctx, cx, cy, cw, ch, radius); ctx.fill(); ctx.strokeStyle = 'rgba(0, 0, 0, 0.15)'; ctx.lineWidth = 1; drawRoundedRect(ctx, cx, cy, cw, ch, radius); ctx.stroke(); let prob = aiProbabilities[idx], percentVal = Math.round(prob * 100), textColor = ''; if (percentVal < 50) { let alpha = 0.3 + (percentVal / 50) * 0.7; textColor = `rgba(0, 0, 0, ${alpha})`; } else if (percentVal === 50) { textColor = '#ff9800'; } else { let alpha = Math.max(0.3, percentVal / 100); textColor = `rgba(255, 0, 0, ${alpha})`; } let finalFontSize = (ch * 0.40) * (0.3 + (prob * 1.2)); ctx.fillStyle = textColor; ctx.font = `bold ${finalFontSize}px Arial`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.shadowBlur = 0; ctx.fillText(`${percentVal}`, cx + cw/2, cy + ch/2 + (finalFontSize * 0.05)); } 
+            else { const grad = ctx.createLinearGradient(cx, cy, cx, cy + ch); grad.addColorStop(0, 'rgba(255, 255, 255, 0.85)'); grad.addColorStop(1, 'rgba(255, 255, 255, 0.3)'); ctx.fillStyle = grad; drawRoundedRect(ctx, cx, cy, cw, ch, radius); ctx.fill(); ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)'; ctx.lineWidth = 1.5; drawRoundedRect(ctx, cx + 1, cy + 1, cw - 2, ch - 2, radius); ctx.stroke(); ctx.strokeStyle = 'rgba(0, 0, 0, 0.08)'; ctx.lineWidth = 1; drawRoundedRect(ctx, cx, cy, cw, ch, radius); ctx.stroke(); }
           } else {
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.1)'; 
-            drawRoundedRect(ctx, cx, cy, cw, ch, radius);
-            ctx.fill();
-            
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
-            ctx.lineWidth = 1;
-            drawRoundedRect(ctx, cx, cy, cw, ch, radius);
-            ctx.stroke();
-
-            if (mine) {
-              const pColor = (owner === 'A') ? players.A.color : players.B.color;
-              const glowGrad = ctx.createRadialGradient(cx + cw/2, cy + ch/2, 0, cx + cw/2, cy + ch/2, cw);
-              glowGrad.addColorStop(0, pColor + '99'); 
-              glowGrad.addColorStop(1, pColor + '20'); 
-              
-              ctx.fillStyle = glowGrad;
-              drawRoundedRect(ctx, cx + 1, cy + 1, cw - 2, ch - 2, radius);
-              ctx.fill();
-
-              ctx.shadowColor = pColor;
-              ctx.shadowBlur = 12;
-              ctx.font = `${ch * 0.55}px Arial`; 
-              ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-              ctx.fillText('🚩', cx + cw/2, cy + ch/2 + 2);
-              ctx.shadowBlur = 0; 
-
-            } else if (num > 0) {
-              const colors = ['#2563eb', '#16a34a', '#dc2626', '#9333ea', '#ea580c', '#0d9488', '#475569', '#0f172a'];
-              const cStr = colors[num - 1] || '#475569';
-              
-              ctx.shadowColor = cStr + '80'; 
-              ctx.shadowBlur = 8;
-              ctx.font = `900 ${ch * 0.55}px monospace`; 
-              ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-              ctx.fillStyle = cStr; 
-              ctx.fillText(num, cx + cw/2, cy + ch/2 + 2); 
-              ctx.shadowBlur = 0; 
-            }
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.1)'; drawRoundedRect(ctx, cx, cy, cw, ch, radius); ctx.fill(); ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)'; ctx.lineWidth = 1; drawRoundedRect(ctx, cx, cy, cw, ch, radius); ctx.stroke();
+            if (mine) { const pColor = (owner === 'A') ? players.A.color : players.B.color; const glowGrad = ctx.createRadialGradient(cx + cw/2, cy + ch/2, 0, cx + cw/2, cy + ch/2, cw); glowGrad.addColorStop(0, pColor + '99'); glowGrad.addColorStop(1, pColor + '20'); ctx.fillStyle = glowGrad; drawRoundedRect(ctx, cx + 1, cy + 1, cw - 2, ch - 2, radius); ctx.fill(); ctx.shadowColor = pColor; ctx.shadowBlur = 12; ctx.font = `${ch * 0.55}px Arial`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('🚩', cx + cw/2, cy + ch/2 + 2); ctx.shadowBlur = 0; } 
+            else if (num > 0) { const colors = ['#2563eb', '#16a34a', '#dc2626', '#9333ea', '#ea580c', '#0d9488', '#475569', '#0f172a']; const cStr = colors[num - 1] || '#475569'; ctx.shadowColor = cStr + '80'; ctx.shadowBlur = 8; ctx.font = `900 ${ch * 0.55}px monospace`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = cStr; ctx.fillText(num, cx + cw/2, cy + ch/2 + 2); ctx.shadowBlur = 0; }
           }
-
-          if (isLastMove) {
-            ctx.save();
-            const pColor = (lastP === 'A') ? players.A.color : players.B.color;
-            ctx.strokeStyle = pColor + '80'; 
-            ctx.lineWidth = 4;
-            ctx.shadowColor = pColor;
-            ctx.shadowBlur = 12;
-            drawRoundedRect(ctx, cx, cy, cw, ch, radius);
-            ctx.stroke();
-            ctx.restore();
-          }
-        }
-      }
+          if (isLastMove) { ctx.save(); const pColor = (lastP === 'A') ? players.A.color : players.B.color; ctx.strokeStyle = pColor + '80'; ctx.lineWidth = 4; ctx.shadowColor = pColor; ctx.shadowBlur = 12; drawRoundedRect(ctx, cx, cy, cw, ch, radius); ctx.stroke(); ctx.restore(); }
+      } }
     }
 
     function autoFitAllTexts() {
-      const elementsToFit = [
-        { txt: document.getElementById('nameA'), box: document.getElementById('nameA')?.parentElement, maxFontSize: 42 },
-        { txt: document.getElementById('timeA'), box: document.getElementById('timeA')?.parentElement, maxFontSize: 30 },
-        { txt: document.getElementById('nameB'), box: document.getElementById('nameB')?.parentElement, maxFontSize: 42 },
-        { txt: document.getElementById('timeB'), box: document.getElementById('timeB')?.parentElement, maxFontSize: 30 },
-        { txt: document.getElementById('scoreLargeText'), box: document.getElementById('scoreLargeText')?.parentElement, maxFontSize: 50 }
-      ];
-
-      elementsToFit.forEach(({ txt, box, maxFontSize }) => {
-        if (!txt || !box || box.clientWidth === 0) return;
-        
-        const maxWidth = box.clientWidth - 4; 
-        const maxHeight = box.clientHeight;
-        
-        let minSize = 10;
-        let maxSize = maxFontSize;
-        let bestSize = minSize;
-        
-        while(minSize <= maxSize) {
-          let midSize = Math.floor((minSize + maxSize) / 2);
-          txt.style.fontSize = midSize + 'px';
-          
-          if (txt.offsetWidth <= maxWidth && txt.offsetHeight <= maxHeight) {
-            bestSize = midSize;
-            minSize = midSize + 1; 
-          } else {
-            maxSize = midSize - 1; 
-          }
-        }
-        
-        txt.style.fontSize = bestSize + 'px';
-      });
+      const elementsToFit = [ { txt: document.getElementById('nameA'), box: document.getElementById('nameA')?.parentElement, maxFontSize: 42 }, { txt: document.getElementById('timeA'), box: document.getElementById('timeA')?.parentElement, maxFontSize: 30 }, { txt: document.getElementById('nameB'), box: document.getElementById('nameB')?.parentElement, maxFontSize: 42 }, { txt: document.getElementById('timeB'), box: document.getElementById('timeB')?.parentElement, maxFontSize: 30 }, { txt: document.getElementById('scoreLargeText'), box: document.getElementById('scoreLargeText')?.parentElement, maxFontSize: 50 } ];
+      elementsToFit.forEach(({ txt, box, maxFontSize }) => { if (!txt || !box || box.clientWidth === 0) return; const maxWidth = box.clientWidth - 4, maxHeight = box.clientHeight; let minSize = 10, maxSize = maxFontSize, bestSize = minSize; while(minSize <= maxSize) { let midSize = Math.floor((minSize + maxSize) / 2); txt.style.fontSize = midSize + 'px'; if (txt.offsetWidth <= maxWidth && txt.offsetHeight <= maxHeight) { bestSize = midSize; minSize = midSize + 1; } else { maxSize = midSize - 1; } } txt.style.fontSize = bestSize + 'px'; });
     }
-
-    let resizeTimer = null;
-    window.addEventListener('resize', () => {
-      if (resizeTimer) clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(autoFitAllTexts, 100);
-    });
+    let resizeTimer = null; window.addEventListener('resize', () => { if (resizeTimer) clearTimeout(resizeTimer); resizeTimer = setTimeout(autoFitAllTexts, 100); });
 
     function updateHUD(turn = null) {
-      document.getElementById('nameA').innerText = players.A.name; 
-      document.getElementById('nameA').style.color = players.A.color;
-      document.getElementById('nameB').innerText = players.B.name;
-      document.getElementById('nameB').style.color = players.B.color;
-      
-      if (engine.timeMode === 'none') {
-        document.getElementById('timeA').innerText = '🛠️ 練習';
-        document.getElementById('timeB').innerText = '🛠️ 練習';
-      } else {
-        document.getElementById('timeA').innerText = formatTime(engine.timeA);
-        document.getElementById('timeB').innerText = formatTime(engine.timeB);
-      }
-
-      const scoreAV = players.A.score !== undefined ? players.A.score : (isHost ? engine.scoreA : 0);
-      const scoreBV = players.B.score !== undefined ? players.B.score : (isHost ? engine.scoreB : 0);
-      
-      document.getElementById('scoreA').innerText = scoreAV;
-      document.getElementById('scoreA').style.color = players.A.color;
-      document.getElementById('scoreB').innerText = scoreBV;
-      document.getElementById('scoreB').style.color = players.B.color;
-
-      if (engine.minesCount && gameActive) {
-        const remaining = engine.minesCount - scoreAV - scoreBV;
-        document.getElementById('remMinesText').innerText = `剩餘地雷: ${remaining}`;
-        
-        const winThreshold = Math.ceil(engine.minesCount / 2);
-        const reqAV = Math.max(0, winThreshold - scoreAV);
-        const reqBV = Math.max(0, winThreshold - scoreBV);
-        
-        document.getElementById('reqA').innerText = `再奪${reqAV}個`;
-        document.getElementById('reqA').style.color = players.A.color;
-        document.getElementById('reqB').innerText = `再奪${reqBV}個`;
-        document.getElementById('reqB').style.color = players.B.color;
-      } else if (!gameActive && (scoreAV > 0 || scoreBV > 0)) {
-        document.getElementById('reqA').innerText = '';
-        document.getElementById('reqB').innerText = '';
-      }
-
+      document.getElementById('nameA').innerText = players.A.name; document.getElementById('nameA').style.color = players.A.color; document.getElementById('nameB').innerText = players.B.name; document.getElementById('nameB').style.color = players.B.color;
+      if (engine.timeMode === 'none') { document.getElementById('timeA').innerText = '🛠️ 練習'; document.getElementById('timeB').innerText = '🛠️ 練習'; } else { document.getElementById('timeA').innerText = formatTime(engine.timeA); document.getElementById('timeB').innerText = formatTime(engine.timeB); }
+      const scoreAV = players.A.score !== undefined ? players.A.score : (isHost ? engine.scoreA : 0), scoreBV = players.B.score !== undefined ? players.B.score : (isHost ? engine.scoreB : 0);
+      document.getElementById('scoreA').innerText = scoreAV; document.getElementById('scoreA').style.color = players.A.color; document.getElementById('scoreB').innerText = scoreBV; document.getElementById('scoreB').style.color = players.B.color;
+      if (engine.minesCount && gameActive) { const remaining = engine.minesCount - scoreAV - scoreBV; document.getElementById('remMinesText').innerText = `剩餘地雷: ${remaining}`; const winThreshold = Math.ceil(engine.minesCount / 2); const reqAV = Math.max(0, winThreshold - scoreAV), reqBV = Math.max(0, winThreshold - scoreBV); document.getElementById('reqA').innerText = `再奪${reqAV}個`; document.getElementById('reqA').style.color = players.A.color; document.getElementById('reqB').innerText = `再奪${reqBV}個`; document.getElementById('reqB').style.color = players.B.color; } 
+      else if (!gameActive && (scoreAV > 0 || scoreBV > 0)) { document.getElementById('remMinesText').innerText = ''; document.getElementById('reqA').innerText = ''; document.getElementById('reqB').innerText = ''; }
       const container = document.getElementById('game-container');
-      if (!gameActive) {
-        container.style.setProperty('--turn-color', 'transparent');
-        container.classList.remove('urgent');
-      } else {
-        if (turn === 'A') {
-          container.style.setProperty('--turn-color', players.A.color);
-        } else if (turn === 'B') {
-          container.style.setProperty('--turn-color', players.B.color);
-        }
-
-        if (engine.timeMode !== 'unlimited' && engine.timeMode !== 'none') {
-          const currentRemaining = turn === 'A' ? engine.timeA : engine.timeB;
-          if (currentRemaining <= 10) {
-            container.classList.add('urgent');
-          } else {
-            container.classList.remove('urgent');
-          }
-        } else {
-          container.classList.remove('urgent');
-        }
-      }
-
+      if (!gameActive) { container.style.setProperty('--turn-color', 'transparent'); container.classList.remove('urgent'); } else { if (turn === 'A') container.style.setProperty('--turn-color', players.A.color); else if (turn === 'B') container.style.setProperty('--turn-color', players.B.color); if (engine.timeMode !== 'unlimited' && engine.timeMode !== 'none') { const currentRemaining = turn === 'A' ? engine.timeA : engine.timeB; if (currentRemaining <= 10) container.classList.add('urgent'); else container.classList.remove('urgent'); } else { container.classList.remove('urgent'); } }
       autoFitAllTexts();
     }
 
     function hideOverlay() { overlay.classList.add('hidden'); }
 
-    function showVictory(winnerCode, reason) {
-      clearInterval(heartbeatInterval);
-      clearInterval(heartbeatCheckInterval);
+    // ================= 統一數據計算核心 =================
+    function calculateStats(logs) {
+      let total = logs.length; if (total === 0) return { eff: "0.0%", d: "0.0%", b:0, i:0, m:0, bl:0, mines:0, tot:0, hit100Str: '-', optStr: '-', matchStr: '-' };
+      let mines = logs.filter(l => l.mine).length;
+      let eff = (mines / total * 100).toFixed(1) + "%";
+      let best = logs.filter(l => l.cat === 'Best Move').length;
+      let inacc = logs.filter(l => l.cat === 'Inaccuracy').length;
+      let miss = logs.filter(l => l.cat === 'Missed Mine').length;
+      let blunder = logs.filter(l => l.cat === 'Blunder').length;
+      let avgD = (logs.reduce((sum, l) => sum + l.d, 0) / total * 100).toFixed(1) + "%";
       
-      updateAIBtnUI(); // 遊戲結束隱藏 AI
-      overlay.classList.remove('hidden');
-      const wName = players[winnerCode].name, wColor = players[winnerCode].color;
+      let encountered100 = logs.filter(l => l.mp > 0.999).length;
+      let hit100 = logs.filter(l => l.mp > 0.999 && l.cp > 0.999).length;
+      let hit100Str = encountered100 > 0 ? `<b>${Math.round((hit100 / encountered100)*100)}%</b> <span style="font-size:14px;color:#64748b">(${hit100}/${encountered100})</span>` : `無機會`;
+      let optStr = `<b>${Math.round((best / total)*100)}%</b>`;
       
-      let title = `🏆 ${wName} 獲勝！`;
-      if (reason === 'timeout') {
-         const loserName = winnerCode === 'A' ? players.B.name : players.A.name;
-         title = `⏳ ${loserName} 超時\n${wName} 獲勝！`;
-      } else if (reason === 'resign') {
-         const loserName = winnerCode === 'A' ? players.B.name : players.A.name;
-         title = `🏳️ ${loserName} 認輸\n${wName} 獲勝！`;
-      }
-      
-      document.getElementById('overlayTitle').innerText = title;
-      document.getElementById('overlayTitle').style.color = wColor;
-      document.getElementById('overlayTitle').style.textShadow = `0 0 20px ${wColor}40`;
-      document.getElementById('overlayDesc').innerText = "比賽結束！請點擊下方按鈕還原介面。";
-      
-      document.getElementById('btnHome').style.display = 'block';
+      let matchSum = logs.reduce((sum, l) => sum + (l.mp > 0 ? (l.cp / l.mp) : 1), 0);
+      let matchStr = `<b>${Math.round((matchSum / total)*100)}%</b>`;
+
+      return { eff, d: avgD, b: best, i: inacc, m: miss, bl: blunder, mines, tot: total, hit100Str, optStr, matchStr };
     }
 
+    function showVictory(winnerCode, reason) {
+      clearInterval(heartbeatInterval); clearInterval(heartbeatCheckInterval);
+      updateAIBtnUI(); overlay.classList.remove('hidden');
+      const wName = players[winnerCode].name, wColor = players[winnerCode].color;
+      let title = `🏆 ${wName} 獲勝！`;
+      if (reason === 'timeout') { const loserName = winnerCode === 'A' ? players.B.name : players.A.name; title = `⏳ ${loserName} 超時\n${wName} 獲勝！`; } 
+      else if (reason === 'resign') { const loserName = winnerCode === 'A' ? players.B.name : players.A.name; title = `🏳️ ${loserName} 認輸\n${wName} 獲勝！`; }
+      
+      document.getElementById('overlayTitle').innerText = title; document.getElementById('overlayTitle').style.color = wColor; document.getElementById('overlayTitle').style.textShadow = `0 0 20px ${wColor}40`;
+      document.getElementById('overlayDesc').innerText = "比賽結束！開啟下方報表深入檢討";
+
+      // 動態生成 Web 結算對比表
+      const logsA = engine.matchLogs.filter(l => l.p === 'A'); const sA = calculateStats(logsA);
+      const logsB = engine.matchLogs.filter(l => l.p === 'B'); const sB = calculateStats(logsB);
+
+      let statsHtml = `
+        <table class="stats-table">
+          <thead>
+            <tr><th style="text-align:left;">評分項目</th><th style="color:${players.A.color}">${players.A.name}</th><th style="color:${players.B.color}">${players.B.name}</th></tr>
+          </thead>
+          <tbody>
+            <tr><td style="text-align:left; font-weight:bold;">🚩 最終得分</td><td style="font-weight:bold; color:${players.A.color}">${engine.scoreA}</td><td style="font-weight:bold; color:${players.B.color}">${engine.scoreB}</td></tr>
+            <tr><td style="text-align:left;">🎯 必然雷把握率</td><td>${sA.hit100Str}</td><td>${sB.hit100Str}</td></tr>
+            <tr><td style="text-align:left;">👑 最優手占比</td><td>${sA.optStr}</td><td>${sB.optStr}</td></tr>
+            <tr><td style="text-align:left;">🧠 決策吻合度</td><td>${sA.matchStr}</td><td>${sB.matchStr}</td></tr>
+            <tr><td style="text-align:left;">📉 平均決策偏差</td><td>-${sA.d}</td><td>-${sB.d}</td></tr>
+          </tbody>
+        </table>
+      `;
+
+      let statsContainer = document.getElementById('victoryStats');
+      if (!statsContainer) {
+        statsContainer = document.createElement('div'); statsContainer.id = 'victoryStats';
+        statsContainer.style.width = '90%'; statsContainer.style.maxWidth = '650px'; statsContainer.style.margin = '10px 0';
+        document.getElementById('overlayDesc').after(statsContainer);
+      }
+      statsContainer.innerHTML = statsHtml;
+
+      document.getElementById('pdfControls').style.display = 'flex'; document.getElementById('btnHome').style.display = 'block';
+    }
+
+    // ================= 戰術快照 Retina 繪圖邏輯 =================
+    function drawSnapshotBoard(tctx, log) {
+      tctx.clearRect(0, 0, 700, 700); // 底層指令一律維持 700x700，外部 scale 會自動放大
+      const grid = engine.size; const cellSize = BOARD_PIXEL / grid; const snap = log.snap;
+
+      for (let y = 0; y < grid; y++) {
+        for (let x = 0; x < grid; x++) {
+          let idx = y * grid + x; let cellX = x * cellSize, cellY = y * cellSize;
+          let rev = snap.rev[idx]; let mine = engine.mines[idx]; let owner = snap.own[idx]; let num = engine.numbers[idx];
+          const pad = 2, cx = cellX + pad, cy = cellY + pad, cw = cellSize - pad * 2, ch = cellSize - pad * 2, radius = Math.max(3, cw * 0.15);
+
+          if (!rev) {
+            let prob = snap.probs[idx];
+            tctx.fillStyle = '#ffffff'; drawRoundedRect(tctx, cx, cy, cw, ch, radius); tctx.fill();
+            tctx.strokeStyle = 'rgba(0, 0, 0, 0.15)'; tctx.lineWidth = 1; drawRoundedRect(tctx, cx, cy, cw, ch, radius); tctx.stroke();
+            let percentVal = Math.round(prob * 100), textColor = '';
+            if (percentVal < 50) { let alpha = 0.3 + (percentVal / 50) * 0.7; textColor = `rgba(0, 0, 0, ${alpha})`; } else if (percentVal === 50) { textColor = '#ff9800'; } else { let alpha = Math.max(0.3, percentVal / 100); textColor = `rgba(255, 0, 0, ${alpha})`; }
+            let finalFontSize = (ch * 0.40) * (0.3 + (prob * 1.2));
+            tctx.fillStyle = textColor; tctx.font = `bold ${finalFontSize}px Arial`; tctx.textAlign = 'center'; tctx.textBaseline = 'middle'; 
+            tctx.fillText(`${percentVal}`, cx + cw/2, cy + ch/2 + (finalFontSize * 0.05));
+          } else {
+            tctx.fillStyle = 'rgba(15, 23, 42, 0.1)'; drawRoundedRect(tctx, cx, cy, cw, ch, radius); tctx.fill();
+            tctx.strokeStyle = 'rgba(0, 0, 0, 0.1)'; tctx.lineWidth = 1; drawRoundedRect(tctx, cx, cy, cw, ch, radius); tctx.stroke();
+            if (mine) {
+              const pColor = (owner === 'A') ? players.A.color : players.B.color;
+              const glowGrad = tctx.createRadialGradient(cx + cw/2, cy + ch/2, 0, cx + cw/2, cy + ch/2, cw); glowGrad.addColorStop(0, pColor + '99'); glowGrad.addColorStop(1, pColor + '20'); 
+              tctx.fillStyle = glowGrad; drawRoundedRect(tctx, cx + 1, cy + 1, cw - 2, ch - 2, radius); tctx.fill();
+              tctx.font = `${ch * 0.55}px Arial`; tctx.textAlign = 'center'; tctx.textBaseline = 'middle'; tctx.fillText('🚩', cx + cw/2, cy + ch/2 + 2);
+            } else if (num > 0) {
+              const colors = ['#2563eb', '#16a34a', '#dc2626', '#9333ea', '#ea580c', '#0d9488', '#475569', '#0f172a']; const cStr = colors[num - 1] || '#94a3b8';
+              tctx.font = `900 ${ch * 0.55}px monospace`; tctx.textAlign = 'center'; tctx.textBaseline = 'middle'; tctx.fillStyle = cStr; tctx.fillText(num, cx + cw/2, cy + ch/2 + 2);
+            }
+          }
+
+          if (!rev && snap.probs[idx] === log.mp && log.mp > 0) { tctx.strokeStyle = '#4ade80'; tctx.lineWidth = 6; drawRoundedRect(tctx, cx, cy, cw, ch, radius); tctx.stroke(); }
+          if (x === log.x && y === log.y) {
+            tctx.strokeStyle = '#ef4444'; tctx.lineWidth = 4;
+            tctx.beginPath(); tctx.arc(cx + cw/2, cy + ch/2, cw/2.5, 0, 2*Math.PI); tctx.stroke();
+            tctx.beginPath(); tctx.moveTo(cx + cw/2, cy + 5); tctx.lineTo(cx + cw/2, cy + ch - 5); tctx.stroke();
+            tctx.beginPath(); tctx.moveTo(cx + 5, cy + ch/2); tctx.lineTo(cx + cw - 5, cy + ch/2); tctx.stroke();
+          }
+        }
+      }
+    }
+
+    async function downloadPDF() {
+      const btn = document.getElementById('btnDownloadPDF'); btn.innerText = "Generating Tactical Report..."; btn.disabled = true;
+      const userScale = parseFloat(document.getElementById('pdfScaleSelect').value) || 2.0;
+
+      try {
+        const { jsPDF } = window.jspdf; const pdf = new jsPDF('p', 'pt', 'a4'); 
+        const pdfWidth = pdf.internal.pageSize.getWidth(); const pdfHeight = pdf.internal.pageSize.getHeight();
+
+        document.getElementById('pdf-p1-date').innerText = `Date: ${new Date().toLocaleString()}`;
+        document.getElementById('pdf-a-name').innerText = players.A.name; document.getElementById('pdf-a-score').innerText = engine.scoreA;
+        document.getElementById('pdf-b-name').innerText = players.B.name; document.getElementById('pdf-b-score').innerText = engine.scoreB;
+        
+        const logsA = engine.matchLogs.filter(l => l.p === 'A'); const sA = calculateStats(logsA);
+        document.getElementById('pdf-a-eff').innerText = sA.eff; document.getElementById('pdf-a-hit100').innerHTML = sA.hit100Str;
+        document.getElementById('pdf-a-opt').innerHTML = sA.optStr; document.getElementById('pdf-a-match').innerHTML = sA.matchStr;
+        document.getElementById('pdf-a-delta').innerText = sA.d; document.getElementById('pdf-a-best').innerText = sA.b;
+        document.getElementById('pdf-a-inacc').innerText = sA.i; document.getElementById('pdf-a-miss').innerText = sA.m; document.getElementById('pdf-a-blun').innerText = sA.bl;
+
+        const logsB = engine.matchLogs.filter(l => l.p === 'B'); const sB = calculateStats(logsB);
+        document.getElementById('pdf-b-eff').innerText = sB.eff; document.getElementById('pdf-b-hit100').innerHTML = sB.hit100Str;
+        document.getElementById('pdf-b-opt').innerHTML = sB.optStr; document.getElementById('pdf-b-match').innerHTML = sB.matchStr;
+        document.getElementById('pdf-b-delta').innerText = sB.d; document.getElementById('pdf-b-best').innerText = sB.b;
+        document.getElementById('pdf-b-inacc').innerText = sB.i; document.getElementById('pdf-b-miss').innerText = sB.m; document.getElementById('pdf-b-blun').innerText = sB.bl;
+
+        const p1El = document.getElementById('pdf-page-1');
+        const p1Cvs = await html2canvas(p1El, { scale: userScale });
+        pdf.addImage(p1Cvs.toDataURL('image/png'), 'PNG', 0, 0, pdfWidth, pdfHeight);
+
+        const tacticalContainer = document.getElementById('pdf-tactical-pages'); tacticalContainer.innerHTML = '';
+        const criticalMistakes = engine.matchLogs.filter(l => l.snap !== null);
+
+        for (let i = 0; i < criticalMistakes.length; i++) {
+          const log = criticalMistakes[i]; const pName = (log.p === 'A') ? players.A.name : players.B.name; const pColor = (log.p === 'A') ? '#3b82f6' : '#ef4444';
+          let desc = '';
+          if (log.cat === 'Blunder') { desc = `You clicked a <span style="color:#ef4444;font-weight:bold">0%</span> tile (guaranteed safe) when a <span style="color:#4ade80;font-weight:bold">${Math.round(log.mp*100)}%</span> probability tile was available.`; } 
+          else { desc = `You clicked a <span style="color:#d97706;font-weight:bold">${Math.round(log.cp*100)}%</span> tile, missing a <span style="color:#4ade80;font-weight:bold">100%</span> guaranteed mine visible on the board.`; }
+
+          // 高解析度超採樣繪圖
+          const tCanvas = document.createElement('canvas'); tCanvas.width = 700 * userScale; tCanvas.height = 700 * userScale;
+          const tctx = tCanvas.getContext('2d'); tctx.scale(userScale, userScale);
+          drawSnapshotBoard(tctx, log); const imgData = tCanvas.toDataURL('image/png');
+
+          const pageDiv = document.createElement('div'); pageDiv.className = 'pdf-page';
+          pageDiv.innerHTML = `
+            <div class="tactical-header">
+              <div class="tactical-title" style="color: ${pColor};">${pName} - Turn ${log.t}</div>
+              <div class="tactical-title" style="color: #f87171; font-size: 24px; margin-top: 5px;">${log.cat.toUpperCase()}</div>
+              <div class="tactical-desc">${desc}</div>
+            </div>
+            <div class="tactical-img-container"><img class="tactical-img" src="${imgData}" /></div>
+            <div class="legend-box">
+              <div class="legend-item"><div class="legend-color" style="background:#ef4444;border-radius:50%"></div> <span>Your Click</span></div>
+              <div class="legend-item"><div class="legend-color" style="border:3px solid #4ade80;background:transparent;"></div> <span>Optimal Move</span></div>
+            </div>
+          `;
+          tacticalContainer.appendChild(pageDiv);
+          const pCvs = await html2canvas(pageDiv, { scale: userScale }); pdf.addPage(); pdf.addImage(pCvs.toDataURL('image/png'), 'PNG', 0, 0, pdfWidth, pdfHeight);
+        }
+
+        if (criticalMistakes.length === 0) {
+          const perfDiv = document.createElement('div'); perfDiv.className = 'pdf-page';
+          perfDiv.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;text-align:center;"><div style="font-size:80px;">🏆</div><div style="font-size:42px;font-weight:900;color:#4ade80;margin:20px 0;">PERFECT GAME</div><div style="font-size:24px;color:#64748b;">No critical blunders or missed mines detected.</div></div>`;
+          tacticalContainer.appendChild(perfDiv); const perfCvs = await html2canvas(perfDiv, { scale: userScale }); pdf.addPage(); pdf.addImage(perfCvs.toDataURL('image/png'), 'PNG', 0, 0, pdfWidth, pdfHeight);
+        }
+        pdf.save(`Mine-Duel-Tactical-Report_${new Date().getTime()}.pdf`);
+      } catch (e) { alert("PDF 生成失敗：" + e.message); } finally { btn.innerText = "📄 Download Tactical Report"; btn.disabled = false; document.getElementById('pdf-tactical-pages').innerHTML = ''; }
+    }
   </script>
 </body>
 </html>
