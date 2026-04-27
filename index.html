@@ -428,22 +428,19 @@ function disablePanels() { ['settingsPanel', 'createPanel', 'lobbyPanel', 'aiPla
       
       if (candidates.length > 0) {
         candidates.sort((a, b) => b.prob - a.prob); 
-        
-        if (engine.aiDifficulty === 'omega') {
+              if (engine.aiDifficulty === 'omega') {
           // ==========================================
-          // 🔥 終極 Omega AI 邏輯 (資訊戰與風險控管)
+          // 🔥 真・Omega AI 邏輯 (後果推演與資訊孤島化)
           // ==========================================
           let maxProb = candidates[0].prob;
-          // 找出所有「勝率並列最高」的格子
           let bestCandidates = candidates.filter(c => Math.abs(c.prob - maxProb) < 0.001);
           
           if (bestCandidates.length === 1 || maxProb > 0.999) {
-            // 如果只有唯一最佳解，或是 100% 確定的雷 👉 毫不留情直接拿分！
+            // 唯一最佳解或必死雷：直接拿下
             chosenIdx = bestCandidates[0].index;
           } else {
-            // 💀 進入平局篩選：計算「點錯代價 (Information Leak Score)」
-            // 目的：挑選一個就算點錯了，也能讓對手最痛苦、拿到最少情報的格子
-            let bestScore = Infinity; 
+            // 💀 進入平局篩選：推演「萬一猜錯換對手時，如何讓對手最痛苦」
+            let bestScore = -Infinity; // 注意：這裡改為找最高分
             
             for (let c of bestCandidates) {
               let idx = c.index;
@@ -451,7 +448,7 @@ function disablePanels() { ['settingsPanel', 'createPanel', 'lobbyPanel', 'aiPla
               let y = Math.floor(idx / engine.size);
               
               let unknownNeighbors = 0;
-              let revealedMinesNearby = 0;
+              let touchingFrontierNumbers = 0; // 新增：計算這格碰到了幾個「已開出的邊界數字」
               
               // 掃描周圍 8 宮格
               for (let dy = -1; dy <= 1; dy++) {
@@ -462,29 +459,32 @@ function disablePanels() { ['settingsPanel', 'createPanel', 'lobbyPanel', 'aiPla
                     let nIdx = ny * engine.size + nx;
                     if (!engine.revealed[nIdx]) {
                       unknownNeighbors++;
-                    } else if (engine.mines[nIdx] && engine.owners[nIdx]) {
-                      revealedMinesNearby++;
+                    } else if (engine.numbers[nIdx] > 0 && !engine.mines[nIdx]) {
+                      // 碰到了已經開出來的數字
+                      touchingFrontierNumbers++;
                     }
                   }
                 }
               }
               
-              // 評分權重 (分數越低，情報洩漏越少)：
-              // 1. 周圍未知格子數 (權重10)：極度避免開出空地引發連鎖，或送出輻射範圍大的數字
-              // 2. 附近已標記地雷 (權重2)：避免數字剛好與現有地雷形成簡單邏輯
-              // 3. 距離中心的距離 (負分獎勵)：越靠近邊緣或角落，圖形拓撲越簡單，給予減分獎勵
+              // 額外推理權重設計 (分數越高，對手越難推理)：
+              // 1. 周圍未知格子數 (權重 +10)：未知格子越多，開出的數字包含的變數就越多，對手根本解不出來。
+              // 2. 觸碰已知數字數 (權重 -15)：如果這格周圍有很多已經開出的數字，一旦這格被點開，
+              //    它的數字會跟現有數字產生「交集聯立方程式」，極大機率讓對手瞬間推導出 100% 的地雷。
+              // 3. 距離中心的距離 (權重 -2)：鼓勵點擊中央，因為中央的 8 宮格拓撲最複雜。
+              
               let distToCenter = Math.abs(x - engine.size/2) + Math.abs(y - engine.size/2);
-              let edgeBonus = -distToCenter * 0.5; 
               
-              let score = (unknownNeighbors * 10) + (revealedMinesNearby * 2) + edgeBonus;
+              let score = (unknownNeighbors * 10) - (touchingFrontierNumbers * 15) - (distToCenter * 2);
               
-              if (score < bestScore) {
+              if (score > bestScore) {
                 bestScore = score;
                 chosenIdx = idx;
               }
             }
           }
-        } else {
+        }
+else {
           // ==========================================
           // 一般 AI 邏輯 (依照機率與難度犯錯)
           // ==========================================
