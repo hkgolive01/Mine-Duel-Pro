@@ -110,8 +110,10 @@
     @keyframes blink-turn { 0%, 49.9% { border-color: var(--turn-color); box-shadow: 0 0 35px var(--turn-color), inset 0 0 25px var(--turn-color); } 50%, 100% { border-color: rgba(255,255,255,0.6); box-shadow: 0 15px 35px rgba(0,0,0,0.1), inset 0 0 20px rgba(255,255,255,0.4); } }
     #game-container.urgent { animation: blink-turn 0.6s infinite; }
 
-    #overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 16px; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(12px); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 20; color: #1e293b; text-align: center; transition: opacity 0.3s; }
+    /* 更新 overlay 設計以防溢出 */
+    #overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 16px; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(12px); display: flex; flex-direction: column; align-items: center; justify-content: flex-start; z-index: 20; color: #1e293b; text-align: center; transition: opacity 0.3s; overflow-y: auto; box-sizing: border-box; padding: 20px 10px; }
     #overlay.hidden { opacity: 0; pointer-events: none; }
+    #overlay-content { margin: auto; width: 100%; max-width: 650px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
     #overlay h2 { font-size: 40px; margin-bottom: 10px; color: #0f172a; font-weight: 900;}
     #overlay p { font-size: 18px; color: #475569; font-weight: bold; margin-bottom: 10px;}
     
@@ -119,8 +121,8 @@
     #btnHome:hover { background: #0f172a; transform: scale(1.05); }
 
     /* ================= 結算表與 PDF 控制項樣式 ================= */
-    .stats-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 20px; background: rgba(255, 255, 255, 0.95); border-radius: 12px; overflow: hidden; box-shadow: 0 8px 25px rgba(0,0,0,0.1); }
-    .stats-table th, .stats-table td { padding: 12px 15px; border: 1px solid #cbd5e1; text-align: center; }
+    .stats-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 18px; background: rgba(255, 255, 255, 0.95); border-radius: 12px; overflow: hidden; box-shadow: 0 8px 25px rgba(0,0,0,0.1); }
+    .stats-table th, .stats-table td { padding: 10px 12px; border: 1px solid #cbd5e1; text-align: center; }
     .stats-table th { background: #f1f5f9; font-weight: 900; color: #334155; }
     .stats-table tr:nth-child(even) { background: #f8fafc; }
 
@@ -141,7 +143,7 @@
     .vs-name { font-size: 28px; font-weight: 900; text-align: center; margin-bottom: 10px; }
     .vs-score { font-size: 60px; font-family: monospace; font-weight: bold; text-align: center; margin-bottom: 30px; }
     
-    .stat-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px dashed rgba(0,0,0,0.1); }
+    .stat-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px dashed rgba(0,0,0,0.1); }
     .stat-row:last-child { border-bottom: none; }
     .stat-label { font-size: 16px; font-weight: bold; color: #64748b; }
     .stat-val { font-size: 22px; font-weight: bold; font-family: monospace; color: #1e293b; }
@@ -169,22 +171,10 @@
       .score-small-top { grid-row: 1; grid-column: 1; } .fit-box-score { grid-row: 2; grid-column: 1; width: 100%; }
       .score-main-row { grid-row: 2; grid-column: 1; width: 100%; justify-content: space-between; padding: 0 15px; box-sizing: border-box; z-index: 10; pointer-events: none; }
       .score-small-top, .score-small-bottom { font-size: 13px; transform: scale(1); }
-        #victoryStats {
-        width: 100% !important;
-        margin: 5px 0 !important;
-      }
-      .stats-table {
-        font-size: 14px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-      }
-      .stats-table th, .stats-table td {
-        padding: 8px 6px;
-        word-break: keep-all;
-      }
-      .stats-table td:first-child {
-        font-size: 12px;
-        letter-spacing: -0.5px;
-      }
+      #victoryStats { width: 100% !important; margin: 5px 0 !important; }
+      .stats-table { font-size: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+      .stats-table th, .stats-table td { padding: 8px 6px; word-break: keep-all; }
+      .stats-table td:first-child { font-size: 12px; letter-spacing: -0.5px; }
     }
   </style>
 </head>
@@ -242,6 +232,13 @@
       <h3>6. 本機練習模式 🛠️</h3>
       <button id="btnStartPractice" class="btn-practice">進入練習模式</button>
     </div>
+
+    <!-- 新增：PDF 設置面板 -->
+    <div class="panel" id="pdfSetupPanel">
+      <h3>7. PDF 設置 📄</h3>
+      <label>清晰度倍率: <span id="pdfScaleVal" style="color:var(--accent)">2.0x</span></label>
+      <input type="range" id="pdfScale" min="1.0" max="3.0" step="0.1" value="2.0">
+    </div>
   </div>
 
   <div id="main-area">
@@ -257,26 +254,20 @@
 
     <div id="game-container">
       <canvas id="gameCanvas" width="700" height="700"></canvas>
-      <div id="overlay">
-        <h2 id="overlayTitle">Mine Duel</h2>
-        <p id="overlayDesc">在側邊欄建立或加入房間來開始對戰</p>
-        
-        <!-- 動態生成的 Web 結算表會插在這裡 -->
+      <div id="overlay" class="hidden">
+        <div id="overlay-content">
+          <h2 id="overlayTitle">Mine Duel</h2>
+          <p id="overlayDesc">在側邊欄建立或加入房間來開始對戰</p>
+          
+          <!-- 動態生成的 Web 結算表會插在這裡 -->
 
-        <!-- 下載動態 PDF 報表區域 -->
-        <div id="pdfControls" style="display:none; justify-content: center; align-items: center; gap: 10px; margin-top: 15px;">
-            <select id="pdfScaleSelect" style="width: auto; padding: 12px; border-radius: 12px; font-size: 16px; font-weight: bold; border: 1px solid #cbd5e1; outline: none; cursor: pointer; background: #fff;">
-                <option value="1.0">1.0x</option>
-                <option value="1.2">1.2x</option>
-                <option value="1.6">1.6x</option>
-                <option value="2.0" selected>2.0x</option>
-                <option value="2.5">2.5x</option>
-                <option value="3.0">3.0x</option>
-            </select>
-            <button id="btnDownloadPDF" onclick="downloadPDF()" style="width: 250px; font-size: 16px; padding: 12px; background: linear-gradient(135deg, #10b981, #059669); color: #fff; border: none; border-radius: 12px; cursor: pointer; box-shadow: 0 4px 15px rgba(16,185,129,0.3); font-weight: bold; transition: all 0.3s;">📄 Download Tactical Report</button>
+          <!-- 下載動態 PDF 報表區域 (移除下拉選單，改用外部滑桿) -->
+          <div id="pdfControls" style="display:none; justify-content: center; align-items: center; margin-top: 15px;">
+              <button id="btnDownloadPDF" onclick="downloadPDF()" style="width: 250px; font-size: 16px; padding: 12px; background: linear-gradient(135deg, #10b981, #059669); color: #fff; border: none; border-radius: 12px; cursor: pointer; box-shadow: 0 4px 15px rgba(16,185,129,0.3); font-weight: bold; transition: all 0.3s;">📄 Download Tactical Report</button>
+          </div>
+
+          <button id="btnHome" onclick="location.reload()">🏠 回到主頁</button>
         </div>
-
-        <button id="btnHome" onclick="location.reload()">🏠 回到主頁</button>
       </div>
     </div>
   </div>
@@ -298,6 +289,7 @@
           <div class="stat-row"><span class="stat-label">Match Rate</span><span class="stat-val" id="pdf-a-match" style="color:#1e293b">0%</span></div>
           <div class="stat-row"><span class="stat-label">Avg Delta</span><span class="stat-val" id="pdf-a-delta" style="color:#fbbf24">0%</span></div>
           <div class="stat-row"><span class="stat-label">⭐ Best Moves</span><span class="stat-val" id="pdf-a-best" style="color:#4ade80">0</span></div>
+          <div class="stat-row"><span class="stat-label">🛡️ Conservative</span><span class="stat-val" id="pdf-a-cons" style="color:#60a5fa">0</span></div>
           <div class="stat-row"><span class="stat-label">⚠️ Inaccuracies</span><span class="stat-val" id="pdf-a-inacc" style="color:#facc15">0</span></div>
           <div class="stat-row"><span class="stat-label">❌ Missed Mines</span><span class="stat-val" id="pdf-a-miss" style="color:#fb923c">0</span></div>
           <div class="stat-row"><span class="stat-label">💀 Blunders</span><span class="stat-val" id="pdf-a-blun" style="color:#f87171">0</span></div>
@@ -312,15 +304,18 @@
           <div class="stat-row"><span class="stat-label">Match Rate</span><span class="stat-val" id="pdf-b-match" style="color:#1e293b">0%</span></div>
           <div class="stat-row"><span class="stat-label">Avg Delta</span><span class="stat-val" id="pdf-b-delta" style="color:#fbbf24">0%</span></div>
           <div class="stat-row"><span class="stat-label">⭐ Best Moves</span><span class="stat-val" id="pdf-b-best" style="color:#4ade80">0</span></div>
+          <div class="stat-row"><span class="stat-label">🛡️ Conservative</span><span class="stat-val" id="pdf-b-cons" style="color:#60a5fa">0</span></div>
           <div class="stat-row"><span class="stat-label">⚠️ Inaccuracies</span><span class="stat-val" id="pdf-b-inacc" style="color:#facc15">0</span></div>
           <div class="stat-row"><span class="stat-label">❌ Missed Mines</span><span class="stat-val" id="pdf-b-miss" style="color:#fb923c">0</span></div>
           <div class="stat-row"><span class="stat-label">💀 Blunders</span><span class="stat-val" id="pdf-b-blun" style="color:#f87171">0</span></div>
         </div>
       </div>
-      <div style="text-align: center; margin-top: 40px; color: #64748b; font-size: 16px;">
+      <div style="text-align: center; margin-top: 10px; color: #64748b; font-size: 14px; line-height: 1.5;">
         * This report focuses on identifying critical logic errors. <br>
-        * Blunder: Clicking a 0% cell when valid targets exist. <br>
-        * Missed Mine: Failing to capture a 100% visible mine.
+        * Blunder: Clicking a 0% cell when a >50% valid target exists. <br>
+        * Conservative: Clicking a 0% cell when highest target is ≤50%. <br>
+        * Missed Mine: Failing to capture a 100% visible mine.<br>
+        * Inaccuracy: Clicking a cell with lower probability than the optimal move.
       </div>
     </div>
     
@@ -342,13 +337,21 @@
     const btnResign = document.getElementById('btnResign');
     const btnExitPractice = document.getElementById('btnExitPractice');
     
+    // PDF Scale UI 監聽
+    const pdfScaleInput = document.getElementById('pdfScale');
+    const pdfScaleValSpan = document.getElementById('pdfScaleVal');
+    pdfScaleInput.addEventListener('input', () => {
+      pdfScaleValSpan.innerText = parseFloat(pdfScaleInput.value).toFixed(1) + 'x';
+    });
+
     let isSoundOn = true;
     const soundToggleBtn = document.getElementById('soundToggleBtn');
     soundToggleBtn.addEventListener('click', () => { isSoundOn = !isSoundOn; soundToggleBtn.innerText = isSoundOn ? '🔊' : '🔇'; if (audioCtx.state === 'suspended') audioCtx.resume(); });
 
     let isPracticeMode = false, isAIMode = false, isAIToggledOn = false, aiProbabilities = [], myAiUsesLeft = 0; 
 
-    function disablePanels() { ['settingsPanel', 'createPanel', 'lobbyPanel', 'aiPlayPanel', 'practicePanel'].forEach(id => { const el = document.getElementById(id); if(el) { el.style.opacity = '0.5'; el.style.pointerEvents = 'none'; } }); }
+    // 將 pdfSetupPanel 加入 disablePanels 中（依需求，連線後可以禁用，或保持可用）
+    function disablePanels() { ['settingsPanel', 'createPanel', 'lobbyPanel', 'aiPlayPanel', 'practicePanel', 'pdfSetupPanel'].forEach(id => { const el = document.getElementById(id); if(el) { el.style.opacity = '0.5'; el.style.pointerEvents = 'none'; } }); }
 
     function updateAIBtnUI() {
       if (!gameActive) { btnToggleAI.style.display = 'none'; return; }
@@ -415,21 +418,56 @@
       let unrevealed = new Set(); for (let i = 0; i < totalCells; i++) { if (!engine.revealed[i]) unrevealed.add(i); }
       if (unrevealed.size === 0) return;
       let knownMines = new Set(), knownSafe = new Set(), changed = true;
-      while (changed) { changed = false; for (let i = 0; i < totalCells; i++) { if (engine.revealed[i] && engine.numbers[i] > 0 && !engine.mines[i]) {
-            let unrevNeighbors = [], mineCount = 0; let x = i % engine.size, y = Math.floor(i / engine.size);
-            for (let dy = -1; dy <= 1; dy++) { for (let dx = -1; dx <= 1; dx++) { if (dx === 0 && dy === 0) continue; let nx = x + dx, ny = y + dy; if (nx >= 0 && nx < engine.size && ny >= 0 && ny < engine.size) { let nIdx = ny * engine.size + nx; if ((engine.revealed[nIdx] && engine.mines[nIdx]) || knownMines.has(nIdx)) mineCount++; else if (!engine.revealed[nIdx] && !knownSafe.has(nIdx)) unrevNeighbors.push(nIdx); } } }
+      
+      // 第一段修正：提早閉合的括號已移至底部
+      while (changed) { 
+        changed = false; 
+        for (let i = 0; i < totalCells; i++) { 
+          if (engine.revealed[i] && engine.numbers[i] > 0 && !engine.mines[i]) {
+            let unrevNeighbors = [], mineCount = 0; 
+            let x = i % engine.size, y = Math.floor(i / engine.size);
+            for (let dy = -1; dy <= 1; dy++) { 
+              for (let dx = -1; dx <= 1; dx++) { 
+                if (dx === 0 && dy === 0) continue; 
+                let nx = x + dx, ny = y + dy; 
+                if (nx >= 0 && nx < engine.size && ny >= 0 && ny < engine.size) { 
+                  let nIdx = ny * engine.size + nx; 
+                  if ((engine.revealed[nIdx] && engine.mines[nIdx]) || knownMines.has(nIdx)) mineCount++; 
+                  else if (!engine.revealed[nIdx] && !knownSafe.has(nIdx)) unrevNeighbors.push(nIdx); 
+                } 
+              } 
+            } 
             let req = engine.numbers[i] - mineCount;
             if (req === unrevNeighbors.length && req > 0) { unrevNeighbors.forEach(u => { knownMines.add(u); unrevealed.delete(u); }); changed = true; } 
             else if (req === 0 && unrevNeighbors.length > 0) { unrevNeighbors.forEach(u => { knownSafe.add(u); unrevealed.delete(u); }); changed = true; }
-      } } }
+          } // <--- 括號應該在這裡閉合
+        } 
+      }
+      
       for (let u of knownMines) aiProbabilities[u] = 1.0; for (let u of knownSafe) aiProbabilities[u] = 0.0;
 
       let dynamicRemainingMines = totalRemainingMines - knownMines.size; let constraints = [], frontierSet = new Set();
-      for (let i = 0; i < totalCells; i++) { if (engine.revealed[i] && engine.numbers[i] > 0 && !engine.mines[i]) {
-          let x = i % engine.size, y = Math.floor(i / engine.size); let uncertain = [], mineCount = 0;
-          for (let dy = -1; dy <= 1; dy++) { for (let dx = -1; dx <= 1; dx++) { if (dx === 0 && dy === 0) continue; let nx = x + dx, ny = y + dy; if (nx >= 0 && nx < engine.size && ny >= 0 && ny < engine.size) { let nIdx = ny * engine.size + nx; if ((engine.revealed[nIdx] && engine.mines[nIdx]) || knownMines.has(nIdx)) mineCount++; else if (!engine.revealed[nIdx] && !knownSafe.has(nIdx)) { uncertain.push(nIdx); frontierSet.add(nIdx); } } } }
+      
+      // 第二段修正：提早閉合的括號已移至底部
+      for (let i = 0; i < totalCells; i++) { 
+        if (engine.revealed[i] && engine.numbers[i] > 0 && !engine.mines[i]) {
+          let x = i % engine.size, y = Math.floor(i / engine.size); 
+          let uncertain = [], mineCount = 0;
+          for (let dy = -1; dy <= 1; dy++) { 
+            for (let dx = -1; dx <= 1; dx++) { 
+              if (dx === 0 && dy === 0) continue; 
+              let nx = x + dx, ny = y + dy; 
+              if (nx >= 0 && nx < engine.size && ny >= 0 && ny < engine.size) { 
+                let nIdx = ny * engine.size + nx; 
+                if ((engine.revealed[nIdx] && engine.mines[nIdx]) || knownMines.has(nIdx)) mineCount++; 
+                else if (!engine.revealed[nIdx] && !knownSafe.has(nIdx)) { uncertain.push(nIdx); frontierSet.add(nIdx); } 
+              } 
+            } 
+          }
           if (uncertain.length > 0) constraints.push({ cells: uncertain, req: engine.numbers[i] - mineCount });
-      } }
+        } // <--- 括號應該在這裡閉合
+      }
+
       let unknownCells = []; for (let u of unrevealed) { if (!frontierSet.has(u)) unknownCells.push(u); }
 
       let isDpSuccess = false;
@@ -488,6 +526,7 @@
       if (!isDpSuccess) { let active = [...frontierSet, ...unknownCells]; let p = active.length > 0 ? Math.min(1.0, Math.max(0, dynamicRemainingMines / active.length)) : 0; for (let u of active) aiProbabilities[u] = p; }
       for (let i = 0; i < totalCells; i++) { if (!engine.revealed[i] && aiProbabilities[i] !== null) { if (aiProbabilities[i] > 0.999) aiProbabilities[i] = 1.0; if (aiProbabilities[i] < 0.001) aiProbabilities[i] = 0.0; } }
     }
+
 
     const mapSizeInput = document.getElementById('mapSize'); const mineCountInput = document.getElementById('mineCount');
     const sizeValSpan = document.getElementById('sizeVal'); const mineValSpan = document.getElementById('mineVal');
@@ -641,10 +680,28 @@
 
       calculateAIProbabilities(); let maxProb = 0;
       for (let i = 0; i < engine.size * engine.size; i++) { if (!engine.revealed[i] && aiProbabilities[i] !== null && aiProbabilities[i] > maxProb) { maxProb = aiProbabilities[i]; } }
-      let clickProb = aiProbabilities[idx] !== null ? aiProbabilities[idx] : 0; let delta = maxProb - clickProb; let category = "Best Move";
-      if (maxProb > 0 && clickProb < 0.001) category = "Blunder"; else if (maxProb > 0.999 && clickProb < 0.999) category = "Missed Mine"; else if (delta > 0.001) category = "Inaccuracy";
+      let clickProb = aiProbabilities[idx] !== null ? aiProbabilities[idx] : 0; let delta = maxProb - clickProb; 
+      
+      let category = "Best Move";
+      // 新版錯誤/行為判定邏輯
+      if (clickProb < 0.001) {
+          if (maxProb > 0.50) {
+              category = "Blunder"; // 犯錯：盤面有 >50% 的選擇，卻點了 0%
+          } else if (maxProb > 0) {
+              category = "Conservative"; // 保守行為：最高機率不足 50%，選擇點擊 0% 保命
+          }
+      } else if (maxProb > 0.999 && clickProb < 0.999) {
+          category = "Missed Mine";
+      } else if (delta > 0.001) {
+          category = "Inaccuracy";
+      }
 
-      let snap = null; if (category === 'Blunder' || category === 'Missed Mine') { snap = { rev: [...engine.revealed], own: [...engine.owners], probs: [...aiProbabilities] }; }
+      // Snapshot 條件加入 Inaccuracy，排除 Conservative
+      let snap = null; 
+      if (category === 'Blunder' || category === 'Missed Mine' || category === 'Inaccuracy') { 
+          snap = { rev: [...engine.revealed], own: [...engine.owners], probs: [...aiProbabilities] }; 
+      }
+      
       engine.matchLogs.push({ p: playerRole, t: engine.matchLogs.length + 1, x: x, y: y, cp: clickProb, mp: maxProb, d: delta, cat: category, mine: engine.mines[idx], snap: snap });
       engine.revealed[idx] = true; engine.lastMove = { x: x, y: y, p: playerRole }; 
 
@@ -726,13 +783,14 @@
 
     // ================= 統一數據計算核心 =================
     function calculateStats(logs) {
-      let total = logs.length; if (total === 0) return { eff: "0.0%", d: "0.0%", b:0, i:0, m:0, bl:0, mines:0, tot:0, hit100Str: '-', optStr: '-', matchStr: '-' };
+      let total = logs.length; if (total === 0) return { eff: "0.0%", d: "0.0%", b:0, i:0, m:0, bl:0, c:0, mines:0, tot:0, hit100Str: '-', optStr: '-', matchStr: '-' };
       let mines = logs.filter(l => l.mine).length;
       let eff = (mines / total * 100).toFixed(1) + "%";
       let best = logs.filter(l => l.cat === 'Best Move').length;
       let inacc = logs.filter(l => l.cat === 'Inaccuracy').length;
       let miss = logs.filter(l => l.cat === 'Missed Mine').length;
       let blunder = logs.filter(l => l.cat === 'Blunder').length;
+      let cons = logs.filter(l => l.cat === 'Conservative').length;
       let avgD = (logs.reduce((sum, l) => sum + l.d, 0) / total * 100).toFixed(1) + "%";
       
       let encountered100 = logs.filter(l => l.mp > 0.999).length;
@@ -743,7 +801,7 @@
       let matchSum = logs.reduce((sum, l) => sum + (l.mp > 0 ? (l.cp / l.mp) : 1), 0);
       let matchStr = `<b>${Math.round((matchSum / total)*100)}%</b>`;
 
-      return { eff, d: avgD, b: best, i: inacc, m: miss, bl: blunder, mines, tot: total, hit100Str, optStr, matchStr };
+      return { eff, d: avgD, b: best, i: inacc, m: miss, bl: blunder, c: cons, mines, tot: total, hit100Str, optStr, matchStr };
     }
 
     function showVictory(winnerCode, reason) {
@@ -755,9 +813,7 @@
       else if (reason === 'resign') { const loserName = winnerCode === 'A' ? players.B.name : players.A.name; title = `🏳️ ${loserName} 認輸\n${wName} 獲勝！`; }
       
       document.getElementById('overlayTitle').innerText = title; document.getElementById('overlayTitle').style.color = wColor; document.getElementById('overlayTitle').style.textShadow = `0 0 20px ${wColor}40`;
-      document.getElementById('overlayDesc').innerText = "比賽結束！開啟下方報表深入檢討";
 
-      // 動態生成 Web 結算對比表
       const logsA = engine.matchLogs.filter(l => l.p === 'A'); const sA = calculateStats(logsA);
       const logsB = engine.matchLogs.filter(l => l.p === 'B'); const sB = calculateStats(logsB);
 
@@ -779,7 +835,7 @@
       let statsContainer = document.getElementById('victoryStats');
       if (!statsContainer) {
         statsContainer = document.createElement('div'); statsContainer.id = 'victoryStats';
-        statsContainer.style.width = '90%'; statsContainer.style.maxWidth = '650px'; statsContainer.style.margin = '10px 0';
+        statsContainer.style.width = '100%'; statsContainer.style.maxWidth = '650px'; statsContainer.style.margin = '10px 0'; statsContainer.style.overflowX = 'auto';
         document.getElementById('overlayDesc').after(statsContainer);
       }
       statsContainer.innerHTML = statsHtml;
@@ -789,7 +845,7 @@
 
     // ================= 戰術快照 Retina 繪圖邏輯 =================
     function drawSnapshotBoard(tctx, log) {
-      tctx.clearRect(0, 0, 700, 700); // 底層指令一律維持 700x700，外部 scale 會自動放大
+      tctx.clearRect(0, 0, 700, 700); 
       const grid = engine.size; const cellSize = BOARD_PIXEL / grid; const snap = log.snap;
 
       for (let y = 0; y < grid; y++) {
@@ -834,7 +890,7 @@
 
     async function downloadPDF() {
       const btn = document.getElementById('btnDownloadPDF'); btn.innerText = "Generating Tactical Report..."; btn.disabled = true;
-      const userScale = parseFloat(document.getElementById('pdfScaleSelect').value) || 2.0;
+      const userScale = parseFloat(document.getElementById('pdfScale').value) || 2.0;
 
       try {
         const { jsPDF } = window.jspdf; const pdf = new jsPDF('p', 'pt', 'a4'); 
@@ -848,12 +904,14 @@
         document.getElementById('pdf-a-eff').innerText = sA.eff; document.getElementById('pdf-a-hit100').innerHTML = sA.hit100Str;
         document.getElementById('pdf-a-opt').innerHTML = sA.optStr; document.getElementById('pdf-a-match').innerHTML = sA.matchStr;
         document.getElementById('pdf-a-delta').innerText = sA.d; document.getElementById('pdf-a-best').innerText = sA.b;
+        document.getElementById('pdf-a-cons').innerText = sA.c; // 保守行為
         document.getElementById('pdf-a-inacc').innerText = sA.i; document.getElementById('pdf-a-miss').innerText = sA.m; document.getElementById('pdf-a-blun').innerText = sA.bl;
 
         const logsB = engine.matchLogs.filter(l => l.p === 'B'); const sB = calculateStats(logsB);
         document.getElementById('pdf-b-eff').innerText = sB.eff; document.getElementById('pdf-b-hit100').innerHTML = sB.hit100Str;
         document.getElementById('pdf-b-opt').innerHTML = sB.optStr; document.getElementById('pdf-b-match').innerHTML = sB.matchStr;
         document.getElementById('pdf-b-delta').innerText = sB.d; document.getElementById('pdf-b-best').innerText = sB.b;
+        document.getElementById('pdf-b-cons').innerText = sB.c; // 保守行為
         document.getElementById('pdf-b-inacc').innerText = sB.i; document.getElementById('pdf-b-miss').innerText = sB.m; document.getElementById('pdf-b-blun').innerText = sB.bl;
 
         const p1El = document.getElementById('pdf-page-1');
@@ -865,9 +923,19 @@
 
         for (let i = 0; i < criticalMistakes.length; i++) {
           const log = criticalMistakes[i]; const pName = (log.p === 'A') ? players.A.name : players.B.name; const pColor = (log.p === 'A') ? '#3b82f6' : '#ef4444';
+          
           let desc = '';
-          if (log.cat === 'Blunder') { desc = `You clicked a <span style="color:#ef4444;font-weight:bold">0%</span> tile (guaranteed safe) when a <span style="color:#4ade80;font-weight:bold">${Math.round(log.mp*100)}%</span> probability tile was available.`; } 
-          else { desc = `You clicked a <span style="color:#d97706;font-weight:bold">${Math.round(log.cp*100)}%</span> tile, missing a <span style="color:#4ade80;font-weight:bold">100%</span> guaranteed mine visible on the board.`; }
+          let titleColor = '#f87171'; // 預設 Blunder 紅色
+          if (log.cat === 'Blunder') { 
+              desc = `You clicked a <span style="color:#ef4444;font-weight:bold">0%</span> tile (guaranteed safe) when a <span style="color:#4ade80;font-weight:bold">${Math.round(log.mp*100)}%</span> probability tile was available.`; 
+              titleColor = '#f87171';
+          } else if (log.cat === 'Missed Mine') { 
+              desc = `You clicked a <span style="color:#d97706;font-weight:bold">${Math.round(log.cp*100)}%</span> tile, missing a <span style="color:#4ade80;font-weight:bold">100%</span> guaranteed mine visible on the board.`; 
+              titleColor = '#fb923c';
+          } else if (log.cat === 'Inaccuracy') {
+              desc = `You clicked a <span style="color:#d97706;font-weight:bold">${Math.round(log.cp*100)}%</span> tile instead of the optimal <span style="color:#4ade80;font-weight:bold">${Math.round(log.mp*100)}%</span> tile.`;
+              titleColor = '#facc15';
+          }
 
           // 高解析度超採樣繪圖
           const tCanvas = document.createElement('canvas'); tCanvas.width = 700 * userScale; tCanvas.height = 700 * userScale;
@@ -878,7 +946,7 @@
           pageDiv.innerHTML = `
             <div class="tactical-header">
               <div class="tactical-title" style="color: ${pColor};">${pName} - Turn ${log.t}</div>
-              <div class="tactical-title" style="color: #f87171; font-size: 24px; margin-top: 5px;">${log.cat.toUpperCase()}</div>
+              <div class="tactical-title" style="color: ${titleColor}; font-size: 24px; margin-top: 5px;">${log.cat.toUpperCase()}</div>
               <div class="tactical-desc">${desc}</div>
             </div>
             <div class="tactical-img-container"><img class="tactical-img" src="${imgData}" /></div>
@@ -893,10 +961,12 @@
 
         if (criticalMistakes.length === 0) {
           const perfDiv = document.createElement('div'); perfDiv.className = 'pdf-page';
-          perfDiv.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;text-align:center;"><div style="font-size:80px;">🏆</div><div style="font-size:42px;font-weight:900;color:#4ade80;margin:20px 0;">PERFECT GAME</div><div style="font-size:24px;color:#64748b;">No critical blunders or missed mines detected.</div></div>`;
+          perfDiv.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;text-align:center;"><div style="font-size:80px;">🏆</div><div style="font-size:42px;font-weight:900;color:#4ade80;margin:20px 0;">PERFECT GAME</div><div style="font-size:24px;color:#64748b;">No critical blunders, inaccuracies, or missed mines detected.</div></div>`;
           tacticalContainer.appendChild(perfDiv); const perfCvs = await html2canvas(perfDiv, { scale: userScale }); pdf.addPage(); pdf.addImage(perfCvs.toDataURL('image/png'), 'PNG', 0, 0, pdfWidth, pdfHeight);
         }
-        pdf.save(`Mine-Duel-Tactical-Report_${new Date().getTime()}.pdf`);
+        const d = new Date();
+        const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        pdf.save(`${players.A.name}-${players.B.name}-${dateStr}.pdf`);
       } catch (e) { alert("PDF 生成失敗：" + e.message); } finally { btn.innerText = "📄 Download Tactical Report"; btn.disabled = false; document.getElementById('pdf-tactical-pages').innerHTML = ''; }
     }
   </script>
