@@ -1207,13 +1207,13 @@ if (turn === 'A') container.style.setProperty('--turn-color', players.A.color); 
     const tacticalContainer = document.getElementById('pdf-tactical-pages'); tacticalContainer.innerHTML = '';
     const criticalMistakes = engine.matchLogs.filter(l => l.snap !== null);
 
-    const catOrder = { 'Blunder': 1, 'Missed Mine': 2, 'Inaccuracy': 3 };
     criticalMistakes.sort((a, b) => {
-      if (catOrder[a.cat] !== catOrder[b.cat]) {
-        return (catOrder[a.cat] || 99) - (catOrder[b.cat] || 99);
+      if (Math.abs(b.d - a.d) > 1e-6) {
+        return b.d - a.d;
       }
       return a.t - b.t;
     });
+
 
     for (let i = 0; i < criticalMistakes.length; i++) {
 
@@ -1265,7 +1265,9 @@ if (turn === 'A') container.style.setProperty('--turn-color', players.A.color); 
     }
     const d = new Date();
     const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-    pdf.save(`${players.A.name}-${players.B.name}-${dateStr}.pdf`);
+    const timeStr = `${String(d.getHours()).padStart(2, '0')}${String(d.getMinutes()).padStart(2, '0')}`;
+    pdf.save(`${players.A.name}-${players.B.name}-${dateStr}_${timeStr}.pdf`);
+
   } catch (e) { alert("PDF 生成失敗：" + e.message); } finally { btn.innerText = "📄 Download Tactical Report"; btn.disabled = false; document.getElementById('pdf-tactical-pages').innerHTML = ''; }
 }
 
