@@ -465,7 +465,7 @@
       if (candidates.length > 0) {
         candidates.sort((a, b) => b.prob - a.prob); 
         
-        if (currentDifficulty === 'omega') {
+             if (currentDifficulty === 'omega') {
           let maxProb = candidates[0].prob;
           let bestCandidates = candidates.filter(c => Math.abs(c.prob - maxProb) < 0.001);
           
@@ -473,45 +473,70 @@
             chosenIdx = bestCandidates[0].index;
           } else {
             // ==========================================
-            // 🔥 新・Omega AI：周圍已揭開地雷數量最少化優先邏輯
+            // 🔥 究極 Omega AI：雙層雷達戰術 (Layer 1 最少雷 -> Layer 2 最多雷 -> 中心)
             // ==========================================
-            let bestIdx = -1;
-            let minMinesCount = Infinity;
-            
-            for (let c of bestCandidates) {
+            let evaluatedCandidates = bestCandidates.map(c => {
               let idx = c.index;
               let x = idx % engine.size;
               let y = Math.floor(idx / engine.size);
-              let nearbyMines = 0;
               
-              // 檢查周圍 8 宮格
-              for (let dy = -1; dy <= 1; dy++) {
-                for (let dx = -1; dx <= 1; dx++) {
-                  if (dx === 0 && dy === 0) continue;
+              let layer1Mines = 0; // 第一層：周圍 8 格的地雷數
+              let layer2Mines = 0; // 第二層：外圍 24 格的地雷數
+              
+              // 一次掃描 5x5 的範圍
+              for (let dy = -2; dy <= 2; dy++) {
+                for (let dx = -2; dx <= 2; dx++) {
+                  if (dx === 0 && dy === 0) continue; // 跳過自己
+                  
                   let nx = x + dx, ny = y + dy;
                   if (nx >= 0 && nx < engine.size && ny >= 0 && ny < engine.size) {
                     let nIdx = ny * engine.size + nx;
-                    // 如果該位置已翻開，且是地雷
+                    
+                    // 如果該位置已翻開且是地雷
                     if (engine.revealed[nIdx] && engine.mines[nIdx]) {
-                      nearbyMines++;
+                      // 判斷是第一層還是第二層
+                      if (Math.abs(dx) <= 1 && Math.abs(dy) <= 1) {
+                        layer1Mines++;
+                      } else {
+                        layer2Mines++;
+                      }
                     }
                   }
                 }
               }
               
-              if (nearbyMines > 0 && nearbyMines < minMinesCount) {
-                minMinesCount = nearbyMines;
-                bestIdx = idx;
-              }
-            }
-            
-            if (bestIdx !== -1) {
-              chosenIdx = bestIdx;
+              // 計算到地圖中心的距離 (曼哈頓距離)
+              let centerDist = Math.abs(x - engine.size / 2) + Math.abs(y - engine.size / 2);
+              
+              return { index: idx, layer1Mines, layer2Mines, centerDist };
+            });
+
+            // 步驟 1：先看看有沒有任何候選格子「第一層有雷」
+            let candidatesWithLayer1 = evaluatedCandidates.filter(c => c.layer1Mines > 0);
+
+            if (candidatesWithLayer1.length > 0) {
+              // 戰術 A：第一層有雷 -> 找第一層地雷「最少」的，平手找中心
+              candidatesWithLayer1.sort((a, b) => {
+                if (a.layer1Mines !== b.layer1Mines) {
+                  return a.layer1Mines - b.layer1Mines; // Ascending: 最少優先
+                }
+                return a.centerDist - b.centerDist;     // Tie: 越近中心優先
+              });
+              chosenIdx = candidatesWithLayer1[0].index;
+
             } else {
-              chosenIdx = bestCandidates[0].index;
+              // 戰術 B：第一層全部都是 0 雷 -> 啟動第二層邏輯，找第二層地雷「最多」的，平手找中心
+              evaluatedCandidates.sort((a, b) => {
+                if (a.layer2Mines !== b.layer2Mines) {
+                  return b.layer2Mines - a.layer2Mines; // Descending: 最多優先
+                }
+                return a.centerDist - b.centerDist;     // Tie: 越近中心優先
+              });
+              chosenIdx = evaluatedCandidates[0].index;
             }
           }
         }
+
         else {
           let difficulty = parseFloat(currentDifficulty);
           for (let i = 0; i < candidates.length; i++) { 
