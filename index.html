@@ -128,25 +128,25 @@
 
     ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.6); border-radius: 10px; }
 
-    /* ================= 新版全白 PDF 隱藏模板樣式 ================= */
+    /* ================= 新版全白 PDF 隱藏模板樣式 (更新：壓縮間距) ================= */
     #pdf-container { position: absolute; top: -20000px; left: -20000px; width: 800px; font-family: 'Segoe UI', Arial, sans-serif; display: flex; flex-direction: column; }
     .pdf-page { width: 800px; height: 1131px; position: relative; padding: 40px; box-sizing: border-box; overflow: hidden; background: #ffffff; color: #1e293b; }
     
     .pdf-title { font-size: 42px; font-weight: 900; text-transform: uppercase; text-align: center; letter-spacing: 2px; color: #38bdf8; margin-bottom: 5px; }
-    .pdf-subtitle { font-size: 18px; text-align: center; font-weight: bold; opacity: 0.7; margin-bottom: 30px; letter-spacing: 1px; border-bottom: 2px solid rgba(0,0,0,0.1); color: #475569; padding-bottom: 15px;}
+    .pdf-subtitle { font-size: 18px; text-align: center; font-weight: bold; opacity: 0.7; margin-bottom: 15px; letter-spacing: 1px; border-bottom: 2px solid rgba(0,0,0,0.1); color: #475569; padding-bottom: 10px;}
     
-    .vs-container { display: flex; justify-content: space-between; gap: 20px; margin-bottom: 20px; }
-    .vs-col { flex: 1; border-radius: 16px; padding: 25px; box-sizing: border-box; }
+    .vs-container { display: flex; justify-content: space-between; gap: 20px; margin-bottom: 15px; }
+    .vs-col { flex: 1; border-radius: 16px; padding: 15px; box-sizing: border-box; }
     .vs-col.pA { background: linear-gradient(180deg, rgba(59,130,246,0.05) 0%, rgba(255,255,255,0) 100%); border-top: 4px solid #3b82f6; }
     .vs-col.pB { background: linear-gradient(180deg, rgba(239,68,68,0.05) 0%, rgba(255,255,255,0) 100%); border-top: 4px solid #ef4444; }
     
-    .vs-name { font-size: 28px; font-weight: 900; text-align: center; margin-bottom: 10px; }
-    .vs-score { font-size: 60px; font-family: monospace; font-weight: bold; text-align: center; margin-bottom: 30px; }
+    .vs-name { font-size: 24px; font-weight: 900; text-align: center; margin-bottom: 5px; }
+    .vs-score { font-size: 50px; font-family: monospace; font-weight: bold; text-align: center; margin-bottom: 10px; }
     
-    .stat-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px dashed rgba(0,0,0,0.1); }
+    .stat-row { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; border-bottom: 1px dashed rgba(0,0,0,0.1); }
     .stat-row:last-child { border-bottom: none; }
-    .stat-label { font-size: 16px; font-weight: bold; color: #64748b; }
-    .stat-val { font-size: 22px; font-weight: bold; font-family: monospace; color: #1e293b; }
+    .stat-label { font-size: 14px; font-weight: bold; color: #64748b; }
+    .stat-val { font-size: 20px; font-weight: bold; font-family: monospace; color: #1e293b; }
     
     /* 戰術錯題本樣式 */
     .tactical-header { border-bottom: 2px solid rgba(0,0,0,0.1); padding-bottom: 15px; margin-bottom: 30px; }
@@ -244,8 +244,8 @@
     <!-- 新增：PDF 設置面板 -->
     <div class="panel" id="pdfSetupPanel">
       <h3>7. PDF 設置 📄</h3>
-      <label>清晰度倍率: <span id="pdfScaleVal" style="color:var(--accent)">1.3x</span></label>
-      <input type="range" id="pdfScale" min="1.0" max="3.0" step="0.1" value="1.3">
+      <label>清晰度倍率: <span id="pdfScaleVal" style="color:var(--accent)">6.0x</span></label>
+      <input type="range" id="pdfScale" min="1.0" max="10.0" step="0.1" value="6.0">
     </div>
   </div>
 
@@ -262,16 +262,21 @@
 
     <div id="game-container">
       <canvas id="gameCanvas" width="700" height="700"></canvas>
-      <div id="overlay" class="hidden">
-        <div id="overlay-content">
-          <h2 id="overlayTitle">Mine Duel</h2>
-          <div id="pdfControls" style="display:none; justify-content: center; align-items: center; margin-top: 15px;">
-              <button id="btnDownloadPDF" onclick="downloadPDF()" style="width: 250px; font-size: 16px; padding: 12px; background: linear-gradient(135deg, #10b981, #059669); color: #fff; border: none; border-radius: 12px; cursor: pointer; box-shadow: 0 4px 15px rgba(16,185,129,0.3); font-weight: bold; transition: all 0.3s;">📄 Download Tactical Report</button>
-          </div>
+    <div id="overlay" class="hidden">
+      <div id="overlay-content">
+        <h2 id="overlayTitle">Mine Duel</h2>
+        
+        <!-- 請在這裡補上這一行 -->
+        <p id="overlayDesc"></p>
 
-          <button id="btnHome" onclick="location.reload()">🏠 回到主頁</button>
+        <div id="pdfControls" style="display:none; justify-content: center; align-items: center; margin-top: 15px;">
+            <button id="btnDownloadPDF" onclick="downloadPDF()" style="width: 250px; font-size: 16px; padding: 12px; background: linear-gradient(135deg, #10b981, #059669); color: #fff; border: none; border-radius: 12px; cursor: pointer; box-shadow: 0 4px 15px rgba(16,185,129,0.3); font-weight: bold; transition: all 0.3s;">📄 Download Tactical Report</button>
         </div>
+
+        <button id="btnHome" onclick="location.reload()">🏠 回到主頁</button>
       </div>
+    </div>
+
     </div>
   </div>
 
@@ -313,7 +318,13 @@
           <div class="stat-row"><span class="stat-label">💀 Blunders</span><span class="stat-val" id="pdf-b-blun" style="color:#f87171">0</span></div>
         </div>
       </div>
-      <div style="text-align: center; margin-top: 10px; color: #64748b; font-size: 14px; line-height: 1.5;">
+      
+      <!-- 新增：分數走勢圖區塊 -->
+      <div style="text-align:center; margin-top: 5px;">
+        <canvas id="trendChart" width="720" height="350" style="width:720px; height:350px; background: transparent;"></canvas>
+      </div>
+
+      <div style="text-align: center; margin-top: 10px; color: #64748b; font-size: 12px; line-height: 1.4;">
         * This report focuses on identifying critical logic errors. <br>
         * Blunder: Clicking a 0% cell when a >50% valid target exists. <br>
         * Conservative: Clicking a 0% cell when highest target is ≤50%. <br>
@@ -353,7 +364,7 @@
 
     let isPracticeMode = false, isAIMode = false, isAIToggledOn = false, aiProbabilities = [], myAiUsesLeft = 0; 
 
-function disablePanels() { ['settingsPanel', 'createPanel', 'lobbyPanel', 'aiPlayPanel', 'practicePanel', 'pdfSetupPanel', 'omegaPanel'].forEach(id => { const el = document.getElementById(id); if(el) { el.style.opacity = '0.5'; el.style.pointerEvents = 'none'; } }); }
+function disablePanels() { ['settingsPanel', 'createPanel', 'lobbyPanel', 'aiPlayPanel', 'practicePanel', 'pdfSetupPanel'].forEach(id => { const el = document.getElementById(id); if(el) { el.style.opacity = '0.5'; el.style.pointerEvents = 'none'; } }); }
 
     function updateAIBtnUI() {
       if (!gameActive) { btnToggleAI.style.display = 'none'; return; }
@@ -402,20 +413,19 @@ function disablePanels() { ['settingsPanel', 'createPanel', 'lobbyPanel', 'aiPla
       if (audioCtx.state === 'suspended') audioCtx.resume(); 
       isHost = true; isPracticeMode = false; isAIMode = true;
       players.A = { name: myNameInput.value || "Player 1", color: myColorInput.value };
-      players.B = { name: "Omega AI", color: "#0f172a" }; // 魔王專屬深灰色
+      players.B = { name: "Omega AI", color: "#0f172a" }; 
       
-      // 讀取面板 2 的玩家自訂規格 (不強制鎖定)
       engine.size = parseInt(document.getElementById('mapSize').value); 
       engine.minesCount = parseInt(document.getElementById('mineCount').value);
       engine.timeMode = document.getElementById('timeMode').value; 
       engine.aiMode = document.getElementById('aiModeSelect').value; 
-      engine.aiDifficulty = 'omega'; // 設定特殊難度標籤，觸發底層情報戰邏輯
+      engine.aiDifficulty = 'omega'; 
       
       stopBroadcastingLobby(); if(peer) peer.destroy(); if(conn) conn.close(); disablePanels(); startGameEngine();
       if (engine.turn === 'B') setTimeout(makeAIMove, 800);
     });
 
-       function makeAIMove() {
+    function makeAIMove() {
       if (!gameActive || !isAIMode || engine.turn !== 'B') return;
       calculateAIProbabilities(); 
       let chosenIdx = -1; 
@@ -430,29 +440,21 @@ function disablePanels() { ['settingsPanel', 'createPanel', 'lobbyPanel', 'aiPla
       
       if (candidates.length > 0) {
         candidates.sort((a, b) => b.prob - a.prob); 
-              if (engine.aiDifficulty === 'omega') {
-          // ==========================================
-          // 🔥 真・Omega AI 邏輯 (後果推演與資訊孤島化)
-          // ==========================================
+        if (engine.aiDifficulty === 'omega') {
           let maxProb = candidates[0].prob;
           let bestCandidates = candidates.filter(c => Math.abs(c.prob - maxProb) < 0.001);
           
           if (bestCandidates.length === 1 || maxProb > 0.999) {
-            // 唯一最佳解或必死雷：直接拿下
             chosenIdx = bestCandidates[0].index;
           } else {
-            // 💀 進入平局篩選：推演「萬一猜錯換對手時，如何讓對手最痛苦」
-            let bestScore = -Infinity; // 注意：這裡改為找最高分
-            
+            let bestScore = -Infinity; 
             for (let c of bestCandidates) {
               let idx = c.index;
               let x = idx % engine.size;
               let y = Math.floor(idx / engine.size);
-              
               let unknownNeighbors = 0;
-              let touchingFrontierNumbers = 0; // 新增：計算這格碰到了幾個「已開出的邊界數字」
+              let touchingFrontierNumbers = 0; 
               
-              // 掃描周圍 8 宮格
               for (let dy = -1; dy <= 1; dy++) {
                 for (let dx = -1; dx <= 1; dx++) {
                   if (dx === 0 && dy === 0) continue;
@@ -462,34 +464,18 @@ function disablePanels() { ['settingsPanel', 'createPanel', 'lobbyPanel', 'aiPla
                     if (!engine.revealed[nIdx]) {
                       unknownNeighbors++;
                     } else if (engine.numbers[nIdx] > 0 && !engine.mines[nIdx]) {
-                      // 碰到了已經開出來的數字
                       touchingFrontierNumbers++;
                     }
                   }
                 }
               }
-              
-              // 額外推理權重設計 (分數越高，對手越難推理)：
-              // 1. 周圍未知格子數 (權重 +10)：未知格子越多，開出的數字包含的變數就越多，對手根本解不出來。
-              // 2. 觸碰已知數字數 (權重 -15)：如果這格周圍有很多已經開出的數字，一旦這格被點開，
-              //    它的數字會跟現有數字產生「交集聯立方程式」，極大機率讓對手瞬間推導出 100% 的地雷。
-              // 3. 距離中心的距離 (權重 -2)：鼓勵點擊中央，因為中央的 8 宮格拓撲最複雜。
-              
               let distToCenter = Math.abs(x - engine.size/2) + Math.abs(y - engine.size/2);
-              
               let score = (unknownNeighbors * 10) - (touchingFrontierNumbers * 15) - (distToCenter * 2);
-              
-              if (score > bestScore) {
-                bestScore = score;
-                chosenIdx = idx;
-              }
+              if (score > bestScore) { bestScore = score; chosenIdx = idx; }
             }
           }
         }
-else {
-          // ==========================================
-          // 一般 AI 邏輯 (依照機率與難度犯錯)
-          // ==========================================
+        else {
           let difficulty = engine.aiDifficulty !== undefined ? parseFloat(engine.aiDifficulty) : 1.0;
           for (let i = 0; i < candidates.length; i++) { 
             if (Math.random() <= difficulty) { chosenIdx = candidates[i].index; break; } 
@@ -497,7 +483,6 @@ else {
           if (chosenIdx === -1) chosenIdx = candidates[candidates.length - 1].index;
         }
       } else {
-        // 如果完全沒有任何線索，隨機盲猜
         let unrev = []; 
         for (let i = 0; i < totalCells; i++) { if (!engine.revealed[i]) unrev.push(i); }
         if (unrev.length > 0) chosenIdx = unrev[Math.floor(Math.random() * unrev.length)];
@@ -518,7 +503,6 @@ else {
       if (unrevealed.size === 0) return;
       let knownMines = new Set(), knownSafe = new Set(), changed = true;
       
-      // 第一段修正：提早閉合的括號已移至底部
       while (changed) { 
         changed = false; 
         for (let i = 0; i < totalCells; i++) { 
@@ -539,7 +523,7 @@ else {
             let req = engine.numbers[i] - mineCount;
             if (req === unrevNeighbors.length && req > 0) { unrevNeighbors.forEach(u => { knownMines.add(u); unrevealed.delete(u); }); changed = true; } 
             else if (req === 0 && unrevNeighbors.length > 0) { unrevNeighbors.forEach(u => { knownSafe.add(u); unrevealed.delete(u); }); changed = true; }
-          } // <--- 括號應該在這裡閉合
+          } 
         } 
       }
       
@@ -547,7 +531,6 @@ else {
 
       let dynamicRemainingMines = totalRemainingMines - knownMines.size; let constraints = [], frontierSet = new Set();
       
-      // 第二段修正：提早閉合的括號已移至底部
       for (let i = 0; i < totalCells; i++) { 
         if (engine.revealed[i] && engine.numbers[i] > 0 && !engine.mines[i]) {
           let x = i % engine.size, y = Math.floor(i / engine.size); 
@@ -564,7 +547,7 @@ else {
             } 
           }
           if (uncertain.length > 0) constraints.push({ cells: uncertain, req: engine.numbers[i] - mineCount });
-        } // <--- 括號應該在這裡閉合
+        } 
       }
 
       let unknownCells = []; for (let u of unrevealed) { if (!frontierSet.has(u)) unknownCells.push(u); }
@@ -782,20 +765,10 @@ else {
       let clickProb = aiProbabilities[idx] !== null ? aiProbabilities[idx] : 0; let delta = maxProb - clickProb; 
       
       let category = "Best Move";
-      // 新版錯誤/行為判定邏輯
       if (clickProb < 0.001) {
-          if (maxProb > 0.50) {
-              category = "Blunder"; // 犯錯：盤面有 >50% 的選擇，卻點了 0%
-          } else if (maxProb > 0) {
-              category = "Conservative"; // 保守行為：最高機率不足 50%，選擇點擊 0% 保命
-          }
-      } else if (maxProb > 0.999 && clickProb < 0.999) {
-          category = "Missed Mine";
-      } else if (delta > 0.001) {
-          category = "Inaccuracy";
-      }
+          if (maxProb > 0.50) { category = "Blunder"; } else if (maxProb > 0) { category = "Conservative"; }
+      } else if (maxProb > 0.999 && clickProb < 0.999) { category = "Missed Mine"; } else if (delta > 0.001) { category = "Inaccuracy"; }
 
-      // Snapshot 條件加入 Inaccuracy，排除 Conservative
       let snap = null; 
       if (category === 'Blunder' || category === 'Missed Mine' || category === 'Inaccuracy') { 
           snap = { rev: [...engine.revealed], own: [...engine.owners], probs: [...aiProbabilities] }; 
@@ -880,7 +853,6 @@ else {
 
     function hideOverlay() { overlay.classList.add('hidden'); }
 
-    // ================= 統一數據計算核心 =================
     function calculateStats(logs) {
       let total = logs.length; if (total === 0) return { eff: "0.0%", d: "0.0%", b:0, i:0, m:0, bl:0, c:0, mines:0, tot:0, hit100Str: '-', optStr: '-', matchStr: '-' };
       let mines = logs.filter(l => l.mine).length;
@@ -942,7 +914,6 @@ else {
       document.getElementById('pdfControls').style.display = 'flex'; document.getElementById('btnHome').style.display = 'block';
     }
 
-    // ================= 戰術快照 Retina 繪圖邏輯 =================
     function drawSnapshotBoard(tctx, log) {
       tctx.clearRect(0, 0, 700, 700); 
       const grid = engine.size; const cellSize = BOARD_PIXEL / grid; const snap = log.snap;
@@ -987,87 +958,232 @@ else {
       }
     }
 
-    async function downloadPDF() {
-      const btn = document.getElementById('btnDownloadPDF'); btn.innerText = "Generating Tactical Report..."; btn.disabled = true;
-      const userScale = parseFloat(document.getElementById('pdfScale').value) || 1.3;
+    // 新增：繪製分數與回合走勢圖函數
+    function drawTrendChart() {
+      const cvs = document.getElementById('trendChart');
+      if (!cvs) return;
+      const ctx = cvs.getContext('2d');
+      const width = cvs.width;
+      const height = cvs.height;
 
-      try {
-        const { jsPDF } = window.jspdf; const pdf = new jsPDF('p', 'pt', 'a4'); 
-        const pdfWidth = pdf.internal.pageSize.getWidth(); const pdfHeight = pdf.internal.pageSize.getHeight();
+      // 清除背景
+      ctx.clearRect(0, 0, width, height);
 
-        document.getElementById('pdf-p1-date').innerText = `Date: ${new Date().toLocaleString()}`;
-        document.getElementById('pdf-a-name').innerText = players.A.name; document.getElementById('pdf-a-score').innerText = engine.scoreA;
-        document.getElementById('pdf-b-name').innerText = players.B.name; document.getElementById('pdf-b-score').innerText = engine.scoreB;
+      // 解析每回合分數歷史
+      let historyA = [0];
+      let historyB = [0];
+      let scoreA = 0;
+      let scoreB = 0;
+
+      engine.matchLogs.forEach(log => {
+        if (log.mine) {
+          if (log.p === 'A') scoreA++;
+          else scoreB++;
+        }
+        historyA.push(scoreA);
+        historyB.push(scoreB);
+      });
+
+      const totalTurns = historyA.length - 1;
+      if (totalTurns === 0) return; // 若無紀錄則不畫
+
+      const maxScore = Math.max(...historyA, ...historyB, 1);
+
+      // 圖表邊距與實際可用長寬
+      const padding = { top: 20, right: 30, bottom: 30, left: 40 };
+      const chartW = width - padding.left - padding.right;
+      const chartH = height - padding.top - padding.bottom;
+
+      // 繪製網格線與 Y 軸文字
+      ctx.strokeStyle = '#e2e8f0';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      const steps = 4; // Y軸分4段
+      for (let i = 0; i <= steps; i++) {
+        let y = padding.top + chartH - (i / steps) * chartH;
+        ctx.moveTo(padding.left, y);
+        ctx.lineTo(width - padding.right, y);
         
-        const logsA = engine.matchLogs.filter(l => l.p === 'A'); const sA = calculateStats(logsA);
-        document.getElementById('pdf-a-eff').innerText = sA.eff; document.getElementById('pdf-a-hit100').innerHTML = sA.hit100Str;
-        document.getElementById('pdf-a-opt').innerHTML = sA.optStr; document.getElementById('pdf-a-match').innerHTML = sA.matchStr;
-        document.getElementById('pdf-a-delta').innerText = sA.d; document.getElementById('pdf-a-best').innerText = sA.b;
-        document.getElementById('pdf-a-cons').innerText = sA.c; // 保守行為
-        document.getElementById('pdf-a-inacc').innerText = sA.i; document.getElementById('pdf-a-miss').innerText = sA.m; document.getElementById('pdf-a-blun').innerText = sA.bl;
+        ctx.fillStyle = '#64748b';
+        ctx.font = '12px Arial';
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'middle';
+        let val = Math.round((i / steps) * maxScore);
+        ctx.fillText(val, padding.left - 10, y);
+      }
+      ctx.stroke();
 
-        const logsB = engine.matchLogs.filter(l => l.p === 'B'); const sB = calculateStats(logsB);
-        document.getElementById('pdf-b-eff').innerText = sB.eff; document.getElementById('pdf-b-hit100').innerHTML = sB.hit100Str;
-        document.getElementById('pdf-b-opt').innerHTML = sB.optStr; document.getElementById('pdf-b-match').innerHTML = sB.matchStr;
-        document.getElementById('pdf-b-delta').innerText = sB.d; document.getElementById('pdf-b-best').innerText = sB.b;
-        document.getElementById('pdf-b-cons').innerText = sB.c; // 保守行為
-        document.getElementById('pdf-b-inacc').innerText = sB.i; document.getElementById('pdf-b-miss').innerText = sB.m; document.getElementById('pdf-b-blun').innerText = sB.bl;
+      // 繪製 X 軸文字
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      ctx.fillText('0', padding.left, height - padding.bottom + 10);
+      ctx.fillText(totalTurns, width - padding.right, height - padding.bottom + 10);
+      ctx.fillText('Turns', width / 2, height - padding.bottom + 10);
 
-        const p1El = document.getElementById('pdf-page-1');
-        const p1Cvs = await html2canvas(p1El, { scale: userScale });
-        pdf.addImage(p1Cvs.toDataURL('image/png'), 'PNG', 0, 0, pdfWidth, pdfHeight);
+      // 座標轉換器
+      const getX = (index) => padding.left + (index / totalTurns) * chartW;
+      const getY = (val) => padding.top + chartH - (val / maxScore) * chartH;
 
-        const tacticalContainer = document.getElementById('pdf-tactical-pages'); tacticalContainer.innerHTML = '';
-        const criticalMistakes = engine.matchLogs.filter(l => l.snap !== null);
+      // 線條與漸層繪製函數
+      const drawLine = (history, color, glowColor) => {
+        // 1. 填滿底部漸層
+        ctx.beginPath();
+        ctx.moveTo(getX(0), getY(history[0]));
+        for (let i = 1; i <= totalTurns; i++) {
+          ctx.lineTo(getX(i), getY(history[i]));
+        }
+        ctx.lineTo(getX(totalTurns), padding.top + chartH);
+        ctx.lineTo(getX(0), padding.top + chartH);
+        ctx.closePath();
+        let grad = ctx.createLinearGradient(0, padding.top, 0, padding.top + chartH);
+        grad.addColorStop(0, glowColor);
+        grad.addColorStop(1, 'rgba(255,255,255,0)');
+        ctx.fillStyle = grad;
+        ctx.fill();
 
-        for (let i = 0; i < criticalMistakes.length; i++) {
-          const log = criticalMistakes[i]; const pName = (log.p === 'A') ? players.A.name : players.B.name; const pColor = (log.p === 'A') ? '#3b82f6' : '#ef4444';
-          
-          let desc = '';
-          let titleColor = '#f87171'; // 預設 Blunder 紅色
-          if (log.cat === 'Blunder') { 
-              desc = `You clicked a <span style="color:#ef4444;font-weight:bold">0%</span> tile (guaranteed safe) when a <span style="color:#4ade80;font-weight:bold">${Math.round(log.mp*100)}%</span> probability tile was available.`; 
-              titleColor = '#f87171';
-          } else if (log.cat === 'Missed Mine') { 
-              desc = `You clicked a <span style="color:#d97706;font-weight:bold">${Math.round(log.cp*100)}%</span> tile, missing a <span style="color:#4ade80;font-weight:bold">100%</span> guaranteed mine visible on the board.`; 
-              titleColor = '#fb923c';
-          } else if (log.cat === 'Inaccuracy') {
-              desc = `You clicked a <span style="color:#d97706;font-weight:bold">${Math.round(log.cp*100)}%</span> tile instead of the optimal <span style="color:#4ade80;font-weight:bold">${Math.round(log.mp*100)}%</span> tile.`;
-              titleColor = '#facc15';
+        // 2. 畫主要折線
+        ctx.beginPath();
+        ctx.moveTo(getX(0), getY(history[0]));
+        for (let i = 1; i <= totalTurns; i++) {
+          ctx.lineTo(getX(i), getY(history[i]));
+        }
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 3;
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 8;
+        ctx.stroke();
+        ctx.shadowBlur = 0; // 畫完線後重置發光，避免影響圓點
+        
+        // 3. 在得分增加時畫白色實心小圓點
+        for (let i = 1; i <= totalTurns; i++) {
+          if (history[i] > history[i - 1]) {
+            ctx.beginPath();
+            ctx.arc(getX(i), getY(history[i]), 4, 0, Math.PI * 2);
+            ctx.fillStyle = '#fff';
+            ctx.fill();
+            ctx.lineWidth = 2;
+            ctx.stroke();
           }
-
-          // 高解析度超採樣繪圖
-          const tCanvas = document.createElement('canvas'); tCanvas.width = 700 * userScale; tCanvas.height = 700 * userScale;
-          const tctx = tCanvas.getContext('2d'); tctx.scale(userScale, userScale);
-          drawSnapshotBoard(tctx, log); const imgData = tCanvas.toDataURL('image/png');
-
-          const pageDiv = document.createElement('div'); pageDiv.className = 'pdf-page';
-          pageDiv.innerHTML = `
-            <div class="tactical-header">
-              <div class="tactical-title" style="color: ${pColor};">${pName} - Turn ${log.t}</div>
-              <div class="tactical-title" style="color: ${titleColor}; font-size: 24px; margin-top: 5px;">${log.cat.toUpperCase()}</div>
-              <div class="tactical-desc">${desc}</div>
-            </div>
-            <div class="tactical-img-container"><img class="tactical-img" src="${imgData}" /></div>
-            <div class="legend-box">
-              <div class="legend-item"><div class="legend-color" style="background:#ef4444;border-radius:50%"></div> <span>Your Click</span></div>
-              <div class="legend-item"><div class="legend-color" style="border:3px solid #4ade80;background:transparent;"></div> <span>Optimal Move</span></div>
-            </div>
-          `;
-          tacticalContainer.appendChild(pageDiv);
-          const pCvs = await html2canvas(pageDiv, { scale: userScale }); pdf.addPage(); pdf.addImage(pCvs.toDataURL('image/png'), 'PNG', 0, 0, pdfWidth, pdfHeight);
         }
+      };
 
-        if (criticalMistakes.length === 0) {
-          const perfDiv = document.createElement('div'); perfDiv.className = 'pdf-page';
-          perfDiv.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;text-align:center;"><div style="font-size:80px;">🏆</div><div style="font-size:42px;font-weight:900;color:#4ade80;margin:20px 0;">PERFECT GAME</div><div style="font-size:24px;color:#64748b;">No critical blunders, inaccuracies, or missed mines detected.</div></div>`;
-          tacticalContainer.appendChild(perfDiv); const perfCvs = await html2canvas(perfDiv, { scale: userScale }); pdf.addPage(); pdf.addImage(perfCvs.toDataURL('image/png'), 'PNG', 0, 0, pdfWidth, pdfHeight);
-        }
-        const d = new Date();
-        const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-        pdf.save(`${players.A.name}-${players.B.name}-${dateStr}.pdf`);
-      } catch (e) { alert("PDF 生成失敗：" + e.message); } finally { btn.innerText = "📄 Download Tactical Report"; btn.disabled = false; document.getElementById('pdf-tactical-pages').innerHTML = ''; }
+      const colorA = players.A.color;
+      const colorB = players.B.color;
+
+      const rgbA = hexToRgb(colorA);
+      const rgbB = hexToRgb(colorB);
+      
+      const glowA = `rgba(${rgbA[0]}, ${rgbA[1]}, ${rgbA[2]}, 0.4)`;
+      const glowB = `rgba(${rgbB[0]}, ${rgbB[1]}, ${rgbB[2]}, 0.4)`;
+
+      drawLine(historyA, colorA, glowA);
+      drawLine(historyB, colorB, glowB);
     }
+
+
+ async function downloadPDF() {
+  const btn = document.getElementById('btnDownloadPDF'); btn.innerText = "Generating Tactical Report..."; btn.disabled = true;
+  const userScale = parseFloat(document.getElementById('pdfScale').value) || 6.0;
+
+  try {
+    const { jsPDF } = window.jspdf; const pdf = new jsPDF('p', 'pt', 'a4'); 
+    const pdfWidth = pdf.internal.pageSize.getWidth(); const pdfHeight = pdf.internal.pageSize.getHeight();
+
+    document.getElementById('pdf-p1-date').innerText = `Date: ${new Date().toLocaleString()}`;
+    
+    document.getElementById('pdf-a-name').innerText = players.A.name;
+    document.getElementById('pdf-a-score').innerText = engine.scoreA;
+    document.getElementById('pdf-a-name').style.color = players.A.color;
+    document.getElementById('pdf-a-score').style.color = players.A.color;
+    document.querySelector('.vs-col.pA').style.borderTopColor = players.A.color;
+
+    document.getElementById('pdf-b-name').innerText = players.B.name;
+    document.getElementById('pdf-b-score').innerText = engine.scoreB;
+    document.getElementById('pdf-b-name').style.color = players.B.color;
+    document.getElementById('pdf-b-score').style.color = players.B.color;
+    document.querySelector('.vs-col.pB').style.borderTopColor = players.B.color;
+
+    const logsA = engine.matchLogs.filter(l => l.p === 'A'); const sA = calculateStats(logsA);
+    document.getElementById('pdf-a-eff').innerText = sA.eff; document.getElementById('pdf-a-hit100').innerHTML = sA.hit100Str;
+    document.getElementById('pdf-a-opt').innerHTML = sA.optStr; document.getElementById('pdf-a-match').innerHTML = sA.matchStr;
+    document.getElementById('pdf-a-delta').innerText = sA.d; document.getElementById('pdf-a-best').innerText = sA.b;
+    document.getElementById('pdf-a-cons').innerText = sA.c;
+    document.getElementById('pdf-a-inacc').innerText = sA.i; document.getElementById('pdf-a-miss').innerText = sA.m; document.getElementById('pdf-a-blun').innerText = sA.bl;
+
+    const logsB = engine.matchLogs.filter(l => l.p === 'B'); const sB = calculateStats(logsB);
+    document.getElementById('pdf-b-eff').innerText = sB.eff; document.getElementById('pdf-b-hit100').innerHTML = sB.hit100Str;
+    document.getElementById('pdf-b-opt').innerHTML = sB.optStr; document.getElementById('pdf-b-match').innerHTML = sB.matchStr;
+    document.getElementById('pdf-b-delta').innerText = sB.d; document.getElementById('pdf-b-best').innerText = sB.b;
+    document.getElementById('pdf-b-cons').innerText = sB.c;
+    document.getElementById('pdf-b-inacc').innerText = sB.i; document.getElementById('pdf-b-miss').innerText = sB.m; document.getElementById('pdf-b-blun').innerText = sB.bl;
+
+    // 呼叫圖表繪製引擎
+    drawTrendChart();
+
+    const p1El = document.getElementById('pdf-page-1');
+    const p1Cvs = await html2canvas(p1El, { scale: userScale });
+    
+pdf.addImage(p1Cvs.toDataURL('image/jpeg'), 'JPEG', 0, 0, pdfWidth, pdfHeight);
+
+    const tacticalContainer = document.getElementById('pdf-tactical-pages'); tacticalContainer.innerHTML = '';
+    const criticalMistakes = engine.matchLogs.filter(l => l.snap !== null);
+
+    for (let i = 0; i < criticalMistakes.length; i++) {
+      const log = criticalMistakes[i]; const pName = (log.p === 'A') ? players.A.name : players.B.name; const pColor = (log.p === 'A') ? '#3b82f6' : '#ef4444';
+      
+      let desc = '';
+      let titleColor = '#f87171';
+      if (log.cat === 'Blunder') { 
+          desc = `You clicked a <span style="color:#ef4444;font-weight:bold">0%</span> tile (guaranteed safe) when a <span style="color:#4ade80;font-weight:bold">${Math.round(log.mp*100)}%</span> probability tile was available.`; 
+          titleColor = '#f87171';
+      } else if (log.cat === 'Missed Mine') { 
+          desc = `You clicked a <span style="color:#d97706;font-weight:bold">${Math.round(log.cp*100)}%</span> tile, missing a <span style="color:#4ade80;font-weight:bold">100%</span> guaranteed mine visible on the board.`; 
+          titleColor = '#fb923c';
+      } else if (log.cat === 'Inaccuracy') {
+          desc = `You clicked a <span style="color:#d97706;font-weight:bold">${Math.round(log.cp*100)}%</span> tile instead of the optimal <span style="color:#4ade80;font-weight:bold">${Math.round(log.mp*100)}%</span> tile.`;
+          titleColor = '#facc15';
+      }
+
+      const tCanvas = document.createElement('canvas'); tCanvas.width = 700 * userScale; tCanvas.height = 700 * userScale;
+      const tctx = tCanvas.getContext('2d'); tctx.scale(userScale, userScale);
+      drawSnapshotBoard(tctx, log); 
+      // 這裡作為 HTML img 標籤顯示，保留原狀或改 JPEG 皆可，此處保留維持 DOM 渲染正常
+      const imgData = tCanvas.toDataURL('image/png');
+
+      const pageDiv = document.createElement('div'); pageDiv.className = 'pdf-page';
+      pageDiv.innerHTML = `
+        <div class="tactical-header">
+          <div class="tactical-title" style="color: ${pColor};">${pName} - Turn ${log.t}</div>
+          <div class="tactical-title" style="color: ${titleColor}; font-size: 24px; margin-top: 5px;">${log.cat.toUpperCase()}</div>
+          <div class="tactical-desc">${desc}</div>
+        </div>
+        <div class="tactical-img-container"><img class="tactical-img" src="${imgData}" /></div>
+        <div class="legend-box">
+          <div class="legend-item"><div class="legend-color" style="background:#ef4444;border-radius:50%"></div> <span>Your Click</span></div>
+          <div class="legend-item"><div class="legend-color" style="border:3px solid #4ade80;background:transparent;"></div> <span>Optimal Move</span></div>
+        </div>
+      `;
+      tacticalContainer.appendChild(pageDiv);
+      const pCvs = await html2canvas(pageDiv, { scale: userScale }); pdf.addPage(); 
+      
+      // 【修改點 2】：戰術錯題本內頁圖片改為 JPEG 並加入壓縮參數 'FAST'
+      pdf.addImage(pCvs.toDataURL('image/jpeg', 0.75), 'JPEG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
+    }
+
+    if (criticalMistakes.length === 0) {
+      const perfDiv = document.createElement('div'); perfDiv.className = 'pdf-page';
+      perfDiv.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;text-align:center;"><div style="font-size:80px;">🏆</div><div style="font-size:42px;font-weight:900;color:#4ade80;margin:20px 0;">PERFECT GAME</div><div style="font-size:24px;color:#64748b;">No critical blunders, inaccuracies, or missed mines detected.</div></div>`;
+      tacticalContainer.appendChild(perfDiv); const perfCvs = await html2canvas(perfDiv, { scale: userScale }); pdf.addPage(); 
+      
+      // 【修改點 3】：完美過關畫面圖片改為 JPEG 並加入壓縮參數 'FAST'
+      pdf.addImage(perfCvs.toDataURL('image/jpeg', 0.75), 'JPEG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
+    }
+    const d = new Date();
+    const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    pdf.save(`${players.A.name}-${players.B.name}-${dateStr}.pdf`);
+  } catch (e) { alert("PDF 生成失敗：" + e.message); } finally { btn.innerText = "📄 Download Tactical Report"; btn.disabled = false; document.getElementById('pdf-tactical-pages').innerHTML = ''; }
+}
+
   </script>
 </body>
 </html>
