@@ -201,7 +201,7 @@
         <option value="slow">🐢 慢速 (120秒 + 4秒/步)</option>
       </select>
       <label>AI 模式</label>
-      <select id="aiModeSelect"><option value="none" selected>🚫 不允許使用AI</option><option value="1">💡 1 次使用</option><option value="3">💡 3 次使用</option><option value="unlimited">♾️ 無限制</option></select>
+      <select id="aiModeSelect"><option value="none" selected>🚫 不允許使用AI</option><option value="1">💡 1 次使用(落後時使用)</option><option value="3">💡 3 次使用(落後時使用)</option><option value="unlimited">♾️ 無限制</option></select>
       <label>棋盤大小: <span id="sizeVal" style="color:var(--accent)">12</span></label> <input type="range" id="mapSize" min="4" max="20" value="12">
       <label>地雷數量: <span id="mineVal" style="color:#ef4444">39</span></label> <input type="range" id="mineCount" min="3" max="139" value="39">
     </div>
@@ -211,8 +211,9 @@
       <label>難度係數: <span id="aiDiffVal" style="color:var(--accent)">1.00</span></label>
       <input type="range" id="aiDifficulty" min="0.10" max="1.00" step="0.01" value="1.00">
       <button id="btnStartAI" class="btn-ai">開始與 AI 對戰</button>
-      <button id="btnStartOmega" class="btn-danger" style="background: linear-gradient(135deg, #0f172a, #1e293b); box-shadow: 0 4px 15px rgba(0,0,0,0.3); border: none;">挑戰 Omega AI</button>
-      <button id="btnStartAutoAI" class="btn-action" style="background: linear-gradient(135deg, #4b5563, #1f2937); color: white; border: none; margin-top: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">AI-1.00 vs Omega</button>
+          <button id="btnStartOmega" class="btn-danger" style="background: linear-gradient(135deg, #0f172a, #1e293b); box-shadow: 0 4px 15px rgba(0,0,0,0.3); border: none;">挑戰 Omega AI</button>
+      <p style="font-size: 11px; color: #ef4444; text-align: center; margin-top: 5px; margin-bottom: 5px;">* 挑戰 Omega AI 時將強制禁用 AI 分析</p>
+  <button id="btnStartAutoAI" class="btn-action" style="background: linear-gradient(135deg, #4b5563, #1f2937); color: white; border: none; margin-top: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">AI-1.00 vs Omega</button>
     </div>
 
     <div class="panel" id="createPanel">
@@ -418,12 +419,15 @@
       engine.size = parseInt(document.getElementById('mapSize').value); 
       engine.minesCount = parseInt(document.getElementById('mineCount').value);
       engine.timeMode = document.getElementById('timeMode').value; 
-      engine.aiMode = document.getElementById('aiModeSelect').value; 
+      
+      // 強制覆蓋玩家的選擇，將 aiMode 設為 'none'，禁止在對戰 Omega 時使用 AI 提示
+      engine.aiMode = 'none'; 
       engine.aiDifficulty = 'omega'; 
       
       stopBroadcastingLobby(); if(peer) peer.destroy(); if(conn) conn.close(); disablePanels(); startGameEngine();
       if (engine.turn === 'B') setTimeout(makeAIMove, 800);
     });
+
 
     // 新增：全自動掛機對戰按鈕事件
     document.getElementById('btnStartAutoAI').addEventListener('click', () => {
