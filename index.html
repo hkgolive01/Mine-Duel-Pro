@@ -292,6 +292,7 @@
           <div class="stat-row"><span class="stat-label">Avg Delta</span><span class="stat-val" id="pdf-a-delta" style="color:#fbbf24">0%</span></div>
           <div class="stat-row"><span class="stat-label">⭐ Best Moves</span><span class="stat-val" id="pdf-a-best" style="color:#4ade80">0</span></div>
           <div class="stat-row"><span class="stat-label">🛡️ Conservative</span><span class="stat-val" id="pdf-a-cons" style="color:#60a5fa">0</span></div>
+          <div class="stat-row"><span class="stat-label">✔️ Normal</span><span class="stat-val" id="pdf-a-norm" style="color:#a3e635">0</span></div>
           <div class="stat-row"><span class="stat-label">⚠️ Inaccuracies</span><span class="stat-val" id="pdf-a-inacc" style="color:#facc15">0</span></div>
           <div class="stat-row"><span class="stat-label">❌ Missed Mines</span><span class="stat-val" id="pdf-a-miss" style="color:#fb923c">0</span></div>
           <div class="stat-row"><span class="stat-label">💀 Blunders</span><span class="stat-val" id="pdf-a-blun" style="color:#f87171">0</span></div>
@@ -307,6 +308,7 @@
           <div class="stat-row"><span class="stat-label">Avg Delta</span><span class="stat-val" id="pdf-b-delta" style="color:#fbbf24">0%</span></div>
           <div class="stat-row"><span class="stat-label">⭐ Best Moves</span><span class="stat-val" id="pdf-b-best" style="color:#4ade80">0</span></div>
           <div class="stat-row"><span class="stat-label">🛡️ Conservative</span><span class="stat-val" id="pdf-b-cons" style="color:#60a5fa">0</span></div>
+          <div class="stat-row"><span class="stat-label">✔️ Normal</span><span class="stat-val" id="pdf-a-norm" style="color:#a3e635">0</span></div>
           <div class="stat-row"><span class="stat-label">⚠️ Inaccuracies</span><span class="stat-val" id="pdf-b-inacc" style="color:#facc15">0</span></div>
           <div class="stat-row"><span class="stat-label">❌ Missed Mines</span><span class="stat-val" id="pdf-b-miss" style="color:#fb923c">0</span></div>
           <div class="stat-row"><span class="stat-label">💀 Blunders</span><span class="stat-val" id="pdf-b-blun" style="color:#f87171">0</span></div>
@@ -314,16 +316,14 @@
       </div>
       
       <div style="text-align:center; margin-top: 5px;">
-        <canvas id="trendChart" width="720" height="350" style="width:720px; height:350px; background: transparent;"></canvas>
+        <canvas id="trendChart" width="720" height="320" style="width:720px; height:320px; background: transparent;"></canvas>
       </div>
 
-      <div style="text-align: center; margin-top: 10px; color: #64748b; font-size: 12px; line-height: 1.4;">
-        * This report focuses on identifying critical logic errors. <br>
-        * Blunder: Clicking a 0% cell when a >50% valid target exists. <br>
-        * Conservative: Clicking a 0% cell when highest target is ≤50%. <br>
-        * Missed Mine: Failing to capture a 100% visible mine.<br>
-        * Inaccuracy: Clicking a cell with lower probability than the optimal move.
+      <div style="text-align: left; margin-top: 15px; color: #64748b; font-size: 11px; line-height: 1.6; padding: 0 15px;">
+        <b>Performance Metrics:</b> <strong>Capture Efficiency</strong> and <strong>Avg Delta</strong> measure probability accuracy. <strong>Optimal Move %</strong> and <strong>Match Rate</strong> track alignment with engine choices, while <strong>Hit 100% Rate</strong> evaluates accuracy on guaranteed mines.<br>
+        <div style="margin-top: 4px;"><b>Move Categories:</b> <strong>Best Moves</strong> hit maximum probability. <strong>Normal</strong> moves deviate by &lt;5% from optimal, whereas <strong>Inaccuracies</strong> drop by ≥5%. <strong>Missed Mines</strong> ignore a 100% visible target. <strong>Blunders</strong> hit 0% cells when &gt;50% options exist, whereas <strong>Conservative</strong> plays hit 0% when the best option is ≤50%.</div>
       </div>
+
     </div>
     
     <div id="pdf-tactical-pages"></div>
@@ -823,7 +823,8 @@
       let category = "Best Move";
       if (clickProb < 0.001) {
           if (maxProb > 0.50) { category = "Blunder"; } else if (maxProb > 0) { category = "Conservative"; }
-      } else if (maxProb > 0.999 && clickProb < 0.999) { category = "Missed Mine"; } else if (delta > 0.001) { category = "Inaccuracy"; }
+      } else if (maxProb > 0.999 && clickProb < 0.999) { category = "Missed Mine"; } else if (delta >= 0.0499) { category = "Inaccuracy"; } else if (delta > 0.001) { category = "Normal"; }
+
 
       let snap = null; 
       if (category === 'Blunder' || category === 'Missed Mine' || category === 'Inaccuracy') { 
@@ -934,6 +935,7 @@ if (turn === 'A') container.style.setProperty('--turn-color', players.A.color); 
       let eff = (mines / total * 100).toFixed(1) + "%";
       let best = logs.filter(l => l.cat === 'Best Move').length;
       let inacc = logs.filter(l => l.cat === 'Inaccuracy').length;
+      let norm = logs.filter(l => l.cat === 'Normal').length;
       let miss = logs.filter(l => l.cat === 'Missed Mine').length;
       let blunder = logs.filter(l => l.cat === 'Blunder').length;
       let cons = logs.filter(l => l.cat === 'Conservative').length;
@@ -947,7 +949,7 @@ if (turn === 'A') container.style.setProperty('--turn-color', players.A.color); 
       let matchSum = logs.reduce((sum, l) => sum + (l.mp > 0 ? (l.cp / l.mp) : 1), 0);
       let matchStr = `<b>${Math.round((matchSum / total)*100)}%</b>`;
 
-      return { eff, d: avgD, b: best, i: inacc, m: miss, bl: blunder, c: cons, mines, tot: total, hit100Str, optStr, matchStr };
+      return { eff, d: avgD, b: best, i: inacc, n: norm, m: miss, bl: blunder, c: cons, mines, tot: total, hit100Str, optStr, matchStr };
     }
 
     function showVictory(winnerCode, reason) {
@@ -1185,6 +1187,7 @@ if (turn === 'A') container.style.setProperty('--turn-color', players.A.color); 
     document.getElementById('pdf-a-opt').innerHTML = sA.optStr; document.getElementById('pdf-a-match').innerHTML = sA.matchStr;
     document.getElementById('pdf-a-delta').innerText = sA.d; document.getElementById('pdf-a-best').innerText = sA.b;
     document.getElementById('pdf-a-cons').innerText = sA.c;
+    document.getElementById('pdf-a-norm').innerText = sA.n;
     document.getElementById('pdf-a-inacc').innerText = sA.i; document.getElementById('pdf-a-miss').innerText = sA.m; document.getElementById('pdf-a-blun').innerText = sA.bl;
 
     const logsB = engine.matchLogs.filter(l => l.p === 'B'); const sB = calculateStats(logsB);
@@ -1204,7 +1207,16 @@ if (turn === 'A') container.style.setProperty('--turn-color', players.A.color); 
     const tacticalContainer = document.getElementById('pdf-tactical-pages'); tacticalContainer.innerHTML = '';
     const criticalMistakes = engine.matchLogs.filter(l => l.snap !== null);
 
+    const catOrder = { 'Blunder': 1, 'Missed Mine': 2, 'Inaccuracy': 3 };
+    criticalMistakes.sort((a, b) => {
+      if (catOrder[a.cat] !== catOrder[b.cat]) {
+        return (catOrder[a.cat] || 99) - (catOrder[b.cat] || 99);
+      }
+      return a.t - b.t;
+    });
+
     for (let i = 0; i < criticalMistakes.length; i++) {
+
       const log = criticalMistakes[i]; const pName = (log.p === 'A') ? players.A.name : players.B.name; const pColor = (log.p === 'A') ? '#3b82f6' : '#ef4444';
       
       let desc = '';
