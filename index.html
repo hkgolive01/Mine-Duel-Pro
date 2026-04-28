@@ -211,9 +211,9 @@
       <label>難度係數: <span id="aiDiffVal" style="color:var(--accent)">1.00</span></label>
       <input type="range" id="aiDifficulty" min="0.10" max="1.00" step="0.01" value="1.00">
       <button id="btnStartAI" class="btn-ai">開始與 AI 對戰</button>
-          <button id="btnStartainixingo" class="btn-danger" style="background: linear-gradient(135deg, #0f172a, #1e293b); box-shadow: 0 4px 15px rgba(0,0,0,0.3); border: none;">挑戰 ainixingo AI</button>
-      <p style="font-size: 11px; color: #ef4444; text-align: center; margin-top: 5px; margin-bottom: 5px;">* 挑戰 ainixingo AI 時將強制禁用 AI 分析</p>
-  <button id="btnStartAutoAI" class="btn-action" style="background: linear-gradient(135deg, #4b5563, #1f2937); color: white; border: none; margin-top: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">AI-1.00 vs ainixingo</button>
+          <button id="btnStartthor" class="btn-danger" style="background: linear-gradient(135deg, #0f172a, #1e293b); box-shadow: 0 4px 15px rgba(0,0,0,0.3); border: none;">挑戰 thor AI</button>
+      <p style="font-size: 11px; color: #ef4444; text-align: center; margin-top: 5px; margin-bottom: 5px;">* 挑戰 thor AI 時將強制禁用 AI 分析</p>
+  <button id="btnStartAutoAI" class="btn-action" style="background: linear-gradient(135deg, #4b5563, #1f2937); color: white; border: none; margin-top: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">AI-1.00 vs thor</button>
     </div>
 
     <div class="panel" id="createPanel">
@@ -316,9 +316,11 @@
         </div>
       </div>
       
-      <div style="text-align:center; margin-top: 5px;">
-        <canvas id="trendChart" width="720" height="320" style="width:720px; height:320px; background: transparent;"></canvas>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 5px; padding: 0 15px;">
+        <canvas id="trendChart" width="380" height="320" style="width:380px; height:320px; background: transparent;"></canvas>
+        <canvas id="finalBoardChart" width="320" height="320" style="width:320px; height:320px; background: transparent; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);"></canvas>
       </div>
+
 
       <div style="text-align: left; margin-top: 15px; color: #64748b; font-size: 11px; line-height: 1.6; padding: 0 15px;">
         <b>Performance Metrics:</b> <strong>Capture Efficiency</strong> and <strong>Avg Delta</strong> measure probability accuracy. <strong>Optimal Move %</strong> and <strong>Match Rate</strong> track alignment with engine choices, while <strong>Hit 100% Rate</strong> evaluates accuracy on guaranteed mines.<br>
@@ -371,7 +373,7 @@
     function updateAutoScoreBoard() {
       const board = document.getElementById('autoScoreBoard');
       if (board && isAutoBattleMode) {
-        board.innerHTML = `${autoGamesPlayed} | AI-1.00 <span style="color:#3b82f6">[${autoScoreA}]</span> : <span style="color:#f87171">[${autoScoreB}]</span> ainixingo`;
+        board.innerHTML = `${autoGamesPlayed} | AI-1.00 <span style="color:#3b82f6">[${autoScoreA}]</span> : <span style="color:#f87171">[${autoScoreB}]</span> thor`;
       }
     }
 
@@ -410,19 +412,19 @@
       if (engine.turn === 'B') setTimeout(makeAIMove, 800);
     });
 
-    document.getElementById('btnStartainixingo').addEventListener('click', () => {
+    document.getElementById('btnStartthor').addEventListener('click', () => {
       if (audioCtx.state === 'suspended') audioCtx.resume(); 
       isHost = true; isPracticeMode = false; isAIMode = true; isAutoBattleMode = false;
       players.A = { name: myNameInput.value || "Player 1", color: myColorInput.value };
-      players.B = { name: "ainixingo AI", color: "#0f172a" }; 
+      players.B = { name: "thor AI", color: "#0f172a" }; 
       
       engine.size = parseInt(document.getElementById('mapSize').value); 
       engine.minesCount = parseInt(document.getElementById('mineCount').value);
       engine.timeMode = document.getElementById('timeMode').value; 
       
-      // 強制覆蓋玩家的選擇，將 aiMode 設為 'none'，禁止在對戰 ainixingo 時使用 AI 提示
+      // 強制覆蓋玩家的選擇，將 aiMode 設為 'none'，禁止在對戰 thor 時使用 AI 提示
       engine.aiMode = 'none'; 
-      engine.aiDifficulty = 'ainixingo'; 
+      engine.aiDifficulty = 'thor'; 
       
       stopBroadcastingLobby(); if(peer) peer.destroy(); if(conn) conn.close(); disablePanels(); startGameEngine();
       if (engine.turn === 'B') setTimeout(makeAIMove, 800);
@@ -434,7 +436,7 @@
       if (audioCtx.state === 'suspended') audioCtx.resume(); 
       isHost = true; isPracticeMode = false; isAIMode = true; isAutoBattleMode = true;
       players.A = { name: "AI-1.00", color: "#3b82f6" };
-      players.B = { name: "ainixingo", color: "#0f172a" }; 
+      players.B = { name: "thor", color: "#0f172a" }; 
       
       autoScoreA = 0; autoScoreB = 0; autoGamesPlayed = 0;
       document.getElementById('autoScoreBoard').style.display = 'block';
@@ -465,11 +467,11 @@
         } 
       }
       
-      let currentDifficulty = isAutoBattleMode ? (engine.turn === 'A' ? 1.0 : 'ainixingo') : engine.aiDifficulty;
+      let currentDifficulty = isAutoBattleMode ? (engine.turn === 'A' ? 1.0 : 'thor') : engine.aiDifficulty;
       if (candidates.length > 0) {
         candidates.sort((a, b) => b.prob - a.prob); 
         
-        if (currentDifficulty === 'ainixingo') {
+        if (currentDifficulty === 'thor') {
           let maxProb = candidates[0].prob;
           let bestCandidates = candidates.filter(c => Math.abs(c.prob - maxProb) < 0.001);
           
@@ -477,7 +479,7 @@
             chosenIdx = bestCandidates[0].index;
           } else {
             // ==========================================
-            // 🔥 究極 ainixingo AI：三層連續篩選戰術
+            // 🔥 究極 thor AI：三層連續篩選戰術
             // ==========================================
             let evaluatedCandidates = bestCandidates.map(c => {
               let idx = c.index;
@@ -831,12 +833,12 @@
 
 
        let snap = null; 
-      let ainixingoIdx = -1; // 用來儲存 ainixingo AI 最終決定的格子索引
+      let thorIdx = -1; // 用來儲存 thor AI 最終決定的格子索引
 
       if (category === 'Blunder' || category === 'Missed Mine' || category === 'Inaccuracy') { 
           snap = { rev: [...engine.revealed], own: [...engine.owners], probs: [...aiProbabilities] }; 
           
-          // --- 🧠 呼叫 ainixingo AI 三層決策邏輯，找出當下唯一的最佳解 ---
+          // --- 🧠 呼叫 thor AI 三層決策邏輯，找出當下唯一的最佳解 ---
           let bestCands = [];
           for (let i = 0; i < engine.size * engine.size; i++) {
               if (!engine.revealed[i] && aiProbabilities[i] !== null && Math.abs(aiProbabilities[i] - maxProb) < 0.001) {
@@ -845,9 +847,9 @@
           }
           if (bestCands.length > 0) {
               if (bestCands.length === 1 || maxProb > 0.999) {
-                  ainixingoIdx = bestCands[0]; // 如果只有一個最佳解，或已經是100%確定，直接選定
+                  thorIdx = bestCands[0]; // 如果只有一個最佳解，或已經是100%確定，直接選定
               } else {
-                  // 如果機率平手，啟動 ainixingo 三層評估
+                  // 如果機率平手，啟動 thor 三層評估
                   let evaluated = bestCands.map(i => {
                       let cx = i % engine.size, cy = Math.floor(i / engine.size);
                       let l1 = 0, l2 = 0;
@@ -872,13 +874,13 @@
                       if (a.l2 !== b.l2) return b.l2 - a.l2;
                       return a.dist - b.dist;
                   });
-                  ainixingoIdx = evaluated[0].index; // 取得唯一的最優解
+                  thorIdx = evaluated[0].index; // 取得唯一的最優解
               }
           }
       }
       
-      // 將 ainixingoIdx 一併寫入日誌中
-      engine.matchLogs.push({ p: playerRole, t: engine.matchLogs.length + 1, x: x, y: y, cp: clickProb, mp: maxProb, d: delta, cat: category, mine: engine.mines[idx], snap: snap, ainixingoIdx: ainixingoIdx });
+      // 將 thorIdx 一併寫入日誌中
+      engine.matchLogs.push({ p: playerRole, t: engine.matchLogs.length + 1, x: x, y: y, cp: clickProb, mp: maxProb, d: delta, cat: category, mine: engine.mines[idx], snap: snap, thorIdx: thorIdx });
       engine.revealed[idx] = true; engine.lastMove = { x: x, y: y, p: playerRole }; 
 
       if (engine.mines[idx]) {
@@ -990,7 +992,7 @@ if (turn === 'A') container.style.setProperty('--turn-color', players.A.color); 
       
       let encountered100 = logs.filter(l => l.mp > 0.999).length;
       let hit100 = logs.filter(l => l.mp > 0.999 && l.cp > 0.999).length;
-      let hit100Str = encountered100 > 0 ? `<b>${Math.round((hit100 / encountered100)*100)}%</b> <span style="font-size:14px;color:#64748b">(${hit100}/${encountered100})</span>` : `無機會`;
+      let hit100Str = encountered100 > 0 ? `<b>${Math.round((hit100 / encountered100)*100)}%</b> <span style="font-size:14px;color:#64748b">(${hit100}/${encountered100})</span>` : `No chance`;
       let optStr = `<b>${Math.round((best / total)*100)}%</b>`;
       
       let matchSum = logs.reduce((sum, l) => sum + (l.mp > 0 ? (l.cp / l.mp) : 1), 0);
@@ -1092,7 +1094,7 @@ if (turn === 'A') container.style.setProperty('--turn-color', players.A.color); 
           if (!rev && snap.probs[idx] === log.mp && log.mp > 0) { 
             tctx.strokeStyle = '#4ade80'; 
             
-            if (idx === log.ainixingoIdx) {
+            if (idx === log.thorIdx) {
               tctx.lineWidth = 4; 
               tctx.shadowColor = '#4ade80';
               tctx.shadowBlur = 12;
@@ -1230,6 +1232,95 @@ if (turn === 'A') container.style.setProperty('--turn-color', players.A.color); 
       drawLine(historyB, colorB, glowB);
     }
 
+       // 新增：專門用來在 PDF 第一頁繪製不含 AI 提示的終局乾淨棋盤
+    function drawFinalBoard(canvasId) {
+      const cvs = document.getElementById(canvasId);
+      if (!cvs) return;
+      const ctx = cvs.getContext('2d');
+      const width = cvs.width;
+      const height = cvs.height;
+
+      // 清空畫布
+      ctx.clearRect(0, 0, width, height);
+
+      const grid = engine.size;
+      if (!grid) return;
+      const cellSize = width / grid;
+
+      for (let y = 0; y < grid; y++) {
+        for (let x = 0; x < grid; x++) {
+          let idx = y * grid + x;
+          let cellX = x * cellSize, cellY = y * cellSize;
+          
+          let rev = engine.revealed[idx];
+          let mine = engine.mines[idx];
+          let owner = engine.owners[idx];
+          let num = engine.numbers[idx];
+
+          const pad = Math.max(1, cellSize * 0.05); // 動態邊距
+          const cx = cellX + pad, cy = cellY + pad, cw = cellSize - pad * 2, ch = cellSize - pad * 2;
+          const radius = Math.max(2, cw * 0.15);
+
+          if (!rev) {
+            const grad = ctx.createLinearGradient(cx, cy, cx, cy + ch);
+            grad.addColorStop(0, 'rgba(255, 255, 255, 0.85)');
+            grad.addColorStop(1, 'rgba(255, 255, 255, 0.3)');
+            ctx.fillStyle = grad;
+            drawRoundedRect(ctx, cx, cy, cw, ch, radius);
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+            ctx.lineWidth = 1.5;
+            drawRoundedRect(ctx, cx + 1, cy + 1, cw - 2, ch - 2, radius);
+            ctx.stroke();
+            ctx.strokeStyle = 'rgba(0, 0, 0, 0.08)';
+            ctx.lineWidth = 1;
+            drawRoundedRect(ctx, cx, cy, cw, ch, radius);
+            ctx.stroke();
+
+            if (mine) {
+              ctx.font = `${ch * 0.385}px Arial`; 
+              ctx.textAlign = 'center';
+              ctx.textBaseline = 'middle';
+              ctx.fillText('🚩', cx + cw/2, cy + ch/2 + 2);
+            }
+
+          } else {
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+            drawRoundedRect(ctx, cx, cy, cw, ch, radius);
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+            ctx.lineWidth = 1;
+            drawRoundedRect(ctx, cx, cy, cw, ch, radius);
+            ctx.stroke();
+
+            if (mine) {
+              const pColor = (owner === 'A') ? players.A.color : players.B.color;
+              const glowGrad = ctx.createRadialGradient(cx + cw/2, cy + ch/2, 0, cx + cw/2, cy + ch/2, cw);
+              glowGrad.addColorStop(0, pColor + '99');
+              glowGrad.addColorStop(1, pColor + '20');
+              ctx.fillStyle = glowGrad;
+              drawRoundedRect(ctx, cx + 1, cy + 1, cw - 2, ch - 2, radius);
+              ctx.fill();
+              
+              ctx.font = `${ch * 0.55}px Arial`;
+              ctx.textAlign = 'center';
+              ctx.textBaseline = 'middle';
+              ctx.fillText('🚩', cx + cw/2, cy + ch/2 + 2);
+            } else if (num > 0) {
+              // 繪製數字
+              const colors = ['#2563eb', '#16a34a', '#dc2626', '#9333ea', '#ea580c', '#0d9488', '#475569', '#0f172a'];
+              const cStr = colors[num - 1] || '#475569';
+              ctx.font = `900 ${ch * 0.55}px monospace`;
+              ctx.textAlign = 'center';
+              ctx.textBaseline = 'middle';
+              ctx.fillStyle = cStr;
+              ctx.fillText(num, cx + cw/2, cy + ch/2 + 2);
+            }
+          }
+        }
+      }
+    }
+
  async function downloadPDF() {
   const btn = document.getElementById('btnDownloadPDF'); btn.innerText = "Generating Tactical Report..."; btn.disabled = true;
   const userScale = parseFloat(document.getElementById('pdfScale').value) || 2.0;
@@ -1268,7 +1359,7 @@ if (turn === 'A') container.style.setProperty('--turn-color', players.A.color); 
     document.getElementById('pdf-b-inacc').innerText = sB.i; document.getElementById('pdf-b-miss').innerText = sB.m; document.getElementById('pdf-b-blun').innerText = sB.bl;
 
     drawTrendChart();
-
+    drawFinalBoard('finalBoardChart');
     const p1El = document.getElementById('pdf-page-1');
     const p1Cvs = await html2canvas(p1El, { scale: userScale });
     
@@ -1319,8 +1410,8 @@ if (turn === 'A') container.style.setProperty('--turn-color', players.A.color); 
           <!-- 1. 玩家點擊：紅色空心圓圈 -->
           <div class="legend-item"><div class="legend-color" style="border: 4px solid #ef4444; border-radius: 50%; background: transparent; box-sizing: border-box;"></div> <span>Your Click</span></div>
           
-          <!-- 2. ainixingo AI 最終選擇：綠色發光實線框 -->
-          <div class="legend-item"><div class="legend-color" style="border: 4px solid #4ade80; border-radius: 4px; box-shadow: 0 0 8px #4ade80; background: transparent; box-sizing: border-box;"></div> <span>ainixingo Choice</span></div>
+          <!-- 2. thor AI 最終選擇：綠色發光實線框 -->
+          <div class="legend-item"><div class="legend-color" style="border: 4px solid #4ade80; border-radius: 4px; box-shadow: 0 0 8px #4ade80; background: transparent; box-sizing: border-box;"></div> <span>thor Choice</span></div>
           
           <!-- 3. 其他同等高勝率選擇：綠色虛線框 -->
           <div class="legend-item"><div class="legend-color" style="border: 3px dashed #4ade80; border-radius: 4px; background: transparent; box-sizing: border-box;"></div> <span>Alternative Best</span></div>
