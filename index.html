@@ -41,7 +41,8 @@
     #btnExitPractice { position: absolute; top: 50%; transform: translateY(-50%); right: 0; width: 36px; height: 36px; padding: 0; margin: 0; background: rgba(255, 255, 255, 0.7); border: 1px solid var(--glass-border); border-radius: 50%; font-size: 16px; display: none; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.05); cursor: pointer; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); backdrop-filter: blur(5px); color: #475569; }
     #btnExitPractice:hover { background: #ffffff; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2); color: #10b981; border-color: #10b981; transform: translateY(-50%) scale(1.1); }
 
-    body.game-on:not(.practice-mode) #btnResign { display: flex; } body.game-on.practice-mode #btnExitPractice { display: flex; }
+    body.game-on:not(.practice-mode):not(.auto-mode) #btnResign { display: flex; } 
+    body.game-on.practice-mode #btnExitPractice, body.game-on.auto-mode #btnExitPractice { display: flex; }
 
     .panel { background: rgba(255, 255, 255, 0.6); border: 1px solid var(--glass-border); border-radius: 16px; padding: 15px; box-shadow: var(--glass-shadow); transition: opacity 0.3s; }
     .panel h3 { margin: 0 0 10px 0; font-size: 16px; color: #1e293b; font-weight: 800;}
@@ -110,7 +111,6 @@
     @keyframes blink-turn { 0%, 49.9% { border-color: var(--turn-color); box-shadow: 0 0 35px var(--turn-color), inset 0 0 25px var(--turn-color); } 50%, 100% { border-color: rgba(255,255,255,0.6); box-shadow: 0 15px 35px rgba(0,0,0,0.1), inset 0 0 20px rgba(255,255,255,0.4); } }
     #game-container.urgent { animation: blink-turn 0.6s infinite; }
 
-    /* 更新 overlay 設計以防溢出 */
     #overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 16px; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(12px); display: flex; flex-direction: column; align-items: center; justify-content: flex-start; z-index: 20; color: #1e293b; text-align: center; transition: opacity 0.3s; overflow-y: auto; box-sizing: border-box; padding: 20px 10px; }
     #overlay.hidden { opacity: 0; pointer-events: none; }
     #overlay-content { margin: auto; width: 100%; max-width: 650px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
@@ -120,7 +120,6 @@
     #btnHome { width: 200px; font-size: 18px; padding: 12px; background: #1e293b; color: #fff; display: none; margin-top: 10px;}
     #btnHome:hover { background: #0f172a; transform: scale(1.05); }
 
-    /* ================= 結算表與 PDF 控制項樣式 ================= */
     .stats-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 18px; background: rgba(255, 255, 255, 0.95); border-radius: 12px; overflow: hidden; box-shadow: 0 8px 25px rgba(0,0,0,0.1); }
     .stats-table th, .stats-table td { padding: 10px 12px; border: 1px solid #cbd5e1; text-align: center; }
     .stats-table th { background: #f1f5f9; font-weight: 900; color: #334155; }
@@ -128,7 +127,6 @@
 
     ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.6); border-radius: 10px; }
 
-    /* ================= 新版全白 PDF 隱藏模板樣式 (更新：壓縮間距) ================= */
     #pdf-container { position: absolute; top: -20000px; left: -20000px; width: 800px; font-family: 'Segoe UI', Arial, sans-serif; display: flex; flex-direction: column; }
     .pdf-page { width: 800px; height: 1131px; position: relative; padding: 40px; box-sizing: border-box; overflow: hidden; background: #ffffff; color: #1e293b; }
     
@@ -148,7 +146,6 @@
     .stat-label { font-size: 14px; font-weight: bold; color: #64748b; }
     .stat-val { font-size: 20px; font-weight: bold; font-family: monospace; color: #1e293b; }
     
-    /* 戰術錯題本樣式 */
     .tactical-header { border-bottom: 2px solid rgba(0,0,0,0.1); padding-bottom: 15px; margin-bottom: 30px; }
     .tactical-title { font-size: 32px; font-weight: 900; }
     .tactical-desc { font-size: 20px; color: #d97706; margin-top: 10px; line-height: 1.5; }
@@ -167,9 +164,9 @@
       body.game-on #main-area { display: flex !important; flex: 1; padding: 5px; padding-bottom: calc(20px + env(safe-area-inset-bottom)); }
       body:not(.game-on) #sidebar h1 { font-size: 22px; } body.game-on #sidebar h1 { font-size: 20px; }
       #hud { padding: 8px; flex-wrap: wrap; margin-bottom: 5px; } #hudA { width: 50%; order: 1; } #hudB { width: 50%; order: 2; }
-      #hudCenter { display: grid; grid-template-rows: auto auto; grid-template-columns: 1fr; justify-items: center; align-items: center; width: 100%; order: 3; margin-top: 5px; padding-top: 5px; border-top: 1px dashed rgba(148, 163, 184, 0.4); gap: 4px; }
-      .score-small-top { grid-row: 1; grid-column: 1; } .fit-box-score { grid-row: 2; grid-column: 1; width: 100%; }
-      .score-main-row { grid-row: 2; grid-column: 1; width: 100%; justify-content: space-between; padding: 0 15px; box-sizing: border-box; z-index: 10; pointer-events: none; }
+      #hudCenter { display: grid; grid-template-rows: auto auto auto; grid-template-columns: 1fr; justify-items: center; align-items: center; width: 100%; order: 3; margin-top: 5px; padding-top: 5px; border-top: 1px dashed rgba(148, 163, 184, 0.4); gap: 4px; }
+      .score-small-top { grid-row: 2; grid-column: 1; } .fit-box-score { grid-row: 3; grid-column: 1; width: 100%; }
+      .score-main-row { grid-row: 3; grid-column: 1; width: 100%; justify-content: space-between; padding: 0 15px; box-sizing: border-box; z-index: 10; pointer-events: none; }
       .score-small-top, .score-small-bottom { font-size: 13px; transform: scale(1); }
       #victoryStats { width: 100% !important; margin: 5px 0 !important; }
       .stats-table { font-size: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
@@ -187,7 +184,7 @@
       <div style="display: flex; align-items: center; justify-content: center;"><h1>Mine Duel</h1></div>
       <button class="btn-refresh" onclick="location.reload()" title="清空所有並刷新">🔄</button>
       <button id="btnResign" title="認輸">🏳️</button>
-      <button id="btnExitPractice" title="結束練習返回主頁">🏠</button>
+      <button id="btnExitPractice" title="返回主頁">🏠</button>
     </div>
     
     <div class="panel">
@@ -215,6 +212,7 @@
       <input type="range" id="aiDifficulty" min="0.10" max="1.00" step="0.01" value="1.00">
       <button id="btnStartAI" class="btn-ai">開始與 AI 對戰</button>
       <button id="btnStartOmega" class="btn-danger" style="background: linear-gradient(135deg, #0f172a, #1e293b); box-shadow: 0 4px 15px rgba(0,0,0,0.3); border: none;">挑戰 Omega AI</button>
+      <button id="btnStartAutoAI" class="btn-action" style="background: linear-gradient(135deg, #4b5563, #1f2937); color: white; border: none; margin-top: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">AI-1.00 vs Omega</button>
     </div>
 
     <div class="panel" id="createPanel">
@@ -241,7 +239,6 @@
       <button id="btnStartPractice" class="btn-practice">進入練習模式</button>
     </div>
 
-    <!-- 新增：PDF 設置面板 -->
     <div class="panel" id="pdfSetupPanel">
       <h3>7. PDF 設置 📄</h3>
       <label>清晰度倍率: <span id="pdfScaleVal" style="color:var(--accent)">6.0x</span></label>
@@ -250,7 +247,8 @@
   </div>
 
   <div id="main-area">
-    <div id="hud">
+   <div id="autoScoreBoard" style="display:none; font-size: 15px; font-weight: bold; color: #fff; background: #0f172a; padding: 8px 20px; border-radius: 12px; margin-bottom: 10px; text-align: center; letter-spacing: 2px; white-space: nowrap; width: 100%; max-width: 400px; box-sizing: border-box; box-shadow: 0 4px 15px rgba(0,0,0,0.3);"></div>
+<div id="hud">
       <div id="hudA" class="player-col"><div class="fit-box-name"><span class="player-name" id="nameA">等待房主...</span></div><div class="fit-box-time"><span class="player-time" id="timeA">⏳ --:--</span></div></div>
       <div id="hudCenter" class="score-col">
         <div class="score-small-top" id="remMinesText">剩餘地雷: --</div>
@@ -265,14 +263,10 @@
     <div id="overlay" class="hidden">
       <div id="overlay-content">
         <h2 id="overlayTitle">Mine Duel</h2>
-        
-        <!-- 請在這裡補上這一行 -->
         <p id="overlayDesc"></p>
-
         <div id="pdfControls" style="display:none; justify-content: center; align-items: center; margin-top: 15px;">
             <button id="btnDownloadPDF" onclick="downloadPDF()" style="width: 250px; font-size: 16px; padding: 12px; background: linear-gradient(135deg, #10b981, #059669); color: #fff; border: none; border-radius: 12px; cursor: pointer; box-shadow: 0 4px 15px rgba(16,185,129,0.3); font-weight: bold; transition: all 0.3s;">📄 Download Tactical Report</button>
         </div>
-
         <button id="btnHome" onclick="location.reload()">🏠 回到主頁</button>
       </div>
     </div>
@@ -319,7 +313,6 @@
         </div>
       </div>
       
-      <!-- 新增：分數走勢圖區塊 -->
       <div style="text-align:center; margin-top: 5px;">
         <canvas id="trendChart" width="720" height="350" style="width:720px; height:350px; background: transparent;"></canvas>
       </div>
@@ -351,7 +344,6 @@
     const btnResign = document.getElementById('btnResign');
     const btnExitPractice = document.getElementById('btnExitPractice');
     
-    // PDF Scale UI 監聽
     const pdfScaleInput = document.getElementById('pdfScale');
     const pdfScaleValSpan = document.getElementById('pdfScaleVal');
     pdfScaleInput.addEventListener('input', () => {
@@ -363,19 +355,27 @@
     soundToggleBtn.addEventListener('click', () => { isSoundOn = !isSoundOn; soundToggleBtn.innerText = isSoundOn ? '🔊' : '🔇'; if (audioCtx.state === 'suspended') audioCtx.resume(); });
 
     let isPracticeMode = false, isAIMode = false, isAIToggledOn = false, aiProbabilities = [], myAiUsesLeft = 0; 
+    let isAutoBattleMode = false, autoScoreA = 0, autoScoreB = 0, autoGamesPlayed = 0, autoTimeout = null;
 
-function disablePanels() { ['settingsPanel', 'createPanel', 'lobbyPanel', 'aiPlayPanel', 'practicePanel', 'pdfSetupPanel'].forEach(id => { const el = document.getElementById(id); if(el) { el.style.opacity = '0.5'; el.style.pointerEvents = 'none'; } }); }
+    function disablePanels() { ['settingsPanel', 'createPanel', 'lobbyPanel', 'aiPlayPanel', 'practicePanel', 'pdfSetupPanel'].forEach(id => { const el = document.getElementById(id); if(el) { el.style.opacity = '0.5'; el.style.pointerEvents = 'none'; } }); }
 
     function updateAIBtnUI() {
-      if (!gameActive) { btnToggleAI.style.display = 'none'; return; }
+      if (!gameActive || isAutoBattleMode) { btnToggleAI.style.display = 'none'; return; }
       if (isPracticeMode || engine.aiMode === 'unlimited') { btnToggleAI.innerHTML = '🤖'; btnToggleAI.style.display = 'flex'; btnToggleAI.style.opacity = '1'; btnToggleAI.style.pointerEvents = 'auto'; } 
       else if (engine.aiMode === '1' || engine.aiMode === '3') { btnToggleAI.innerHTML = `🤖<span style="font-size:11px; margin-left:1px; font-weight:bold">${myAiUsesLeft}</span>`; btnToggleAI.style.display = 'flex';
         if (myAiUsesLeft <= 0 && !isAIToggledOn) { btnToggleAI.style.opacity = '0.5'; btnToggleAI.style.pointerEvents = 'none'; } else { btnToggleAI.style.opacity = '1'; btnToggleAI.style.pointerEvents = 'auto'; }
       } else { btnToggleAI.style.display = 'none'; }
     }
 
+    function updateAutoScoreBoard() {
+      const board = document.getElementById('autoScoreBoard');
+      if (board && isAutoBattleMode) {
+        board.innerHTML = `${autoGamesPlayed} | AI-1.00 <span style="color:#3b82f6">[${autoScoreA}]</span> : <span style="color:#f87171">[${autoScoreB}]</span> Omega`;
+      }
+    }
+
     btnToggleAI.addEventListener('click', () => {
-      if (!gameActive) return;
+      if (!gameActive || isAutoBattleMode) return;
       if (!isAIToggledOn && !isPracticeMode && (engine.aiMode === '1' || engine.aiMode === '3')) {
         let myScore = isHost ? engine.scoreA : engine.scoreB; let opScore = isHost ? engine.scoreB : engine.scoreA;
         if (myScore >= opScore) { alert("只能在比分落後時使用 AI！"); return; }
@@ -392,7 +392,7 @@ function disablePanels() { ['settingsPanel', 'createPanel', 'lobbyPanel', 'aiPla
 
     document.getElementById('btnStartPractice').addEventListener('click', () => {
       if (audioCtx.state === 'suspended') audioCtx.resume(); 
-      isHost = true; isPracticeMode = true; isAIMode = false;
+      isHost = true; isPracticeMode = true; isAIMode = false; isAutoBattleMode = false;
       players.A = { name: myNameInput.value || "Player 1", color: myColorInput.value }; players.B = { name: "Player 2", color: getContrastingColor(myColorInput.value, "#ef4444") };
       engine.size = parseInt(document.getElementById('mapSize').value); engine.minesCount = parseInt(document.getElementById('mineCount').value); engine.timeMode = 'none'; engine.aiMode = 'unlimited';
       document.body.classList.add('practice-mode'); stopBroadcastingLobby(); if(peer) peer.destroy(); if(conn) conn.close(); disablePanels(); startGameEngine();
@@ -400,7 +400,7 @@ function disablePanels() { ['settingsPanel', 'createPanel', 'lobbyPanel', 'aiPla
 
     document.getElementById('btnStartAI').addEventListener('click', () => {
       if (audioCtx.state === 'suspended') audioCtx.resume(); 
-      isHost = true; isPracticeMode = false; isAIMode = true;
+      isHost = true; isPracticeMode = false; isAIMode = true; isAutoBattleMode = false;
       players.A = { name: myNameInput.value || "Player 1", color: myColorInput.value };
       let diffValue = parseFloat(document.getElementById('aiDifficulty').value).toFixed(2); players.B = { name: "AI-" + diffValue, color: getContrastingColor(myColorInput.value, "#8b5cf6") };
       engine.size = parseInt(document.getElementById('mapSize').value); engine.minesCount = parseInt(document.getElementById('mineCount').value);
@@ -411,7 +411,7 @@ function disablePanels() { ['settingsPanel', 'createPanel', 'lobbyPanel', 'aiPla
 
     document.getElementById('btnStartOmega').addEventListener('click', () => {
       if (audioCtx.state === 'suspended') audioCtx.resume(); 
-      isHost = true; isPracticeMode = false; isAIMode = true;
+      isHost = true; isPracticeMode = false; isAIMode = true; isAutoBattleMode = false;
       players.A = { name: myNameInput.value || "Player 1", color: myColorInput.value };
       players.B = { name: "Omega AI", color: "#0f172a" }; 
       
@@ -425,8 +425,31 @@ function disablePanels() { ['settingsPanel', 'createPanel', 'lobbyPanel', 'aiPla
       if (engine.turn === 'B') setTimeout(makeAIMove, 800);
     });
 
+    // 新增：全自動掛機對戰按鈕事件
+    document.getElementById('btnStartAutoAI').addEventListener('click', () => {
+      if (audioCtx.state === 'suspended') audioCtx.resume(); 
+      isHost = true; isPracticeMode = false; isAIMode = true; isAutoBattleMode = true;
+      players.A = { name: "AI-1.00", color: "#3b82f6" };
+      players.B = { name: "Omega", color: "#0f172a" }; 
+      
+      autoScoreA = 0; autoScoreB = 0; autoGamesPlayed = 0;
+      document.getElementById('autoScoreBoard').style.display = 'block';
+      updateAutoScoreBoard();
+
+      engine.size = parseInt(document.getElementById('mapSize').value); 
+      engine.minesCount = parseInt(document.getElementById('mineCount').value);
+      engine.timeMode = 'fast'; 
+      engine.aiMode = 'none'; 
+      
+      document.body.classList.add('auto-mode');
+      stopBroadcastingLobby(); if(peer) peer.destroy(); if(conn) conn.close(); disablePanels(); startGameEngine();
+      setTimeout(makeAIMove, 500);
+    });
+
     function makeAIMove() {
-      if (!gameActive || !isAIMode || engine.turn !== 'B') return;
+      if (!gameActive || !isAIMode) return;
+      if (!isAutoBattleMode && engine.turn !== 'B') return;
+      
       calculateAIProbabilities(); 
       let chosenIdx = -1; 
       const totalCells = engine.size * engine.size; 
@@ -438,9 +461,11 @@ function disablePanels() { ['settingsPanel', 'createPanel', 'lobbyPanel', 'aiPla
         } 
       }
       
+      let currentDifficulty = isAutoBattleMode ? (engine.turn === 'A' ? 1.0 : 'omega') : engine.aiDifficulty;
+
       if (candidates.length > 0) {
         candidates.sort((a, b) => b.prob - a.prob); 
-        if (engine.aiDifficulty === 'omega') {
+        if (currentDifficulty === 'omega') {
           let maxProb = candidates[0].prob;
           let bestCandidates = candidates.filter(c => Math.abs(c.prob - maxProb) < 0.001);
           
@@ -476,7 +501,7 @@ function disablePanels() { ['settingsPanel', 'createPanel', 'lobbyPanel', 'aiPla
           }
         }
         else {
-          let difficulty = engine.aiDifficulty !== undefined ? parseFloat(engine.aiDifficulty) : 1.0;
+          let difficulty = parseFloat(currentDifficulty);
           for (let i = 0; i < candidates.length; i++) { 
             if (Math.random() <= difficulty) { chosenIdx = candidates[i].index; break; } 
           }
@@ -491,7 +516,7 @@ function disablePanels() { ['settingsPanel', 'createPanel', 'lobbyPanel', 'aiPla
       if (chosenIdx !== -1) { 
         let x = chosenIdx % engine.size; 
         let y = Math.floor(chosenIdx / engine.size); 
-        processClick(x, y, 'B'); 
+        processClick(x, y, engine.turn); 
       }
     }
 
@@ -609,7 +634,6 @@ function disablePanels() { ['settingsPanel', 'createPanel', 'lobbyPanel', 'aiPla
       for (let i = 0; i < totalCells; i++) { if (!engine.revealed[i] && aiProbabilities[i] !== null) { if (aiProbabilities[i] > 0.999) aiProbabilities[i] = 1.0; if (aiProbabilities[i] < 0.001) aiProbabilities[i] = 0.0; } }
     }
 
-
     const mapSizeInput = document.getElementById('mapSize'); const mineCountInput = document.getElementById('mineCount');
     const sizeValSpan = document.getElementById('sizeVal'); const mineValSpan = document.getElementById('mineVal');
     const btnCreate = document.getElementById('btnCreate'); const btnCancel = document.getElementById('btnCancel');
@@ -644,7 +668,7 @@ function disablePanels() { ['settingsPanel', 'createPanel', 'lobbyPanel', 'aiPla
     const HEARTBEAT_INTERVAL_MS = 7000, HEARTBEAT_TIMEOUT_MS = 15000;  
     let comboCount = 0, comboPlayer = null;
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    function playTone(freq, type, duration, vol=0.1) { if (!isSoundOn) return; if (audioCtx.state === 'suspended') audioCtx.resume(); const osc = audioCtx.createOscillator(), gain = audioCtx.createGain(); osc.type = type; osc.frequency.setValueAtTime(freq, audioCtx.currentTime); gain.gain.setValueAtTime(vol, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration); osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + duration); }
+    function playTone(freq, type, duration, vol=0.1) { if (!isSoundOn|| isAutoBattleMode) return; if (audioCtx.state === 'suspended') audioCtx.resume(); const osc = audioCtx.createOscillator(), gain = audioCtx.createGain(); osc.type = type; osc.frequency.setValueAtTime(freq, audioCtx.currentTime); gain.gain.setValueAtTime(vol, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration); osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + duration); }
     function playSoundLocal(type) { if(type === 'safe') { playTone(600, 'sine', 0.1, 0.05); } else if (type === 'mine') { playTone(150, 'square', 0.25, 0.1); } else if (type === 'combo') { setTimeout(() => playTone(400, 'triangle', 0.1, 0.15), 0); setTimeout(() => playTone(500, 'triangle', 0.1, 0.15), 100); setTimeout(() => playTone(650, 'triangle', 0.3, 0.2), 200); } }
     function triggerSound(type) { playSoundLocal(type); if (conn) conn.send({ type: 'PLAY_SOUND', sound: type }); }
 
@@ -715,7 +739,7 @@ function disablePanels() { ['settingsPanel', 'createPanel', 'lobbyPanel', 'aiPla
 
     btnCreate.addEventListener('click', () => {
       if (audioCtx.state === 'suspended') audioCtx.resume(); 
-      isHost = true; isPracticeMode = false; isAIMode = false;
+      isHost = true; isPracticeMode = false; isAIMode = false; isAutoBattleMode = false;
       players.A = { name: myNameInput.value || "Host", color: myColorInput.value };
       engine.size = parseInt(document.getElementById('mapSize').value); engine.minesCount = parseInt(document.getElementById('mineCount').value);
       engine.timeMode = document.getElementById('timeMode').value; engine.aiMode = document.getElementById('aiModeSelect').value;
@@ -732,7 +756,7 @@ function disablePanels() { ['settingsPanel', 'createPanel', 'lobbyPanel', 'aiPla
 
     window.joinGame = function(targetId) {
       if (audioCtx.state === 'suspended') audioCtx.resume(); 
-      isHost = false; isPracticeMode = false; isAIMode = false; players.B = { name: myNameInput.value || "Guest", color: myColorInput.value };
+      isHost = false; isPracticeMode = false; isAIMode = false; isAutoBattleMode = false; players.B = { name: myNameInput.value || "Guest", color: myColorInput.value };
       btnCreate.disabled = true; statusText.innerText = "連線中...";
       const peerConfig = { config: { 'iceServers': [ { urls: 'stun:stun.l.google.com:19302' } ] } }; peer = new Peer(peerConfig);
       let joinTimeout = setTimeout(() => { if (!conn || !conn.open) { alert("連線建立失敗！"); location.reload(); } }, 12000);
@@ -792,7 +816,10 @@ function disablePanels() { ['settingsPanel', 'createPanel', 'lobbyPanel', 'aiPla
       }
       if (isAIToggledOn && gameActive) calculateAIProbabilities();
       updateHUD(engine.turn); drawBoard(); syncToGuest();
-      if (gameActive && isAIMode && engine.turn === 'B') setTimeout(makeAIMove, 800);
+      if (gameActive && isAIMode) {
+        if (isAutoBattleMode) setTimeout(makeAIMove, 50);
+        else if (engine.turn === 'B') setTimeout(makeAIMove, 800);
+      }
     }
 
     function revealZeros(startX, startY) { let q = [[startX, startY]]; while (q.length > 0) { let [cx, cy] = q.shift(); for (let dy = -1; dy <= 1; dy++) { for (let dx = -1; dx <= 1; dx++) { let nx = cx + dx, ny = cy + dy; if (nx >= 0 && nx < engine.size && ny >= 0 && ny < engine.size) { let nIdx = ny * engine.size + nx; if (!engine.revealed[nIdx]) { engine.revealed[nIdx] = true; if (engine.numbers[nIdx] === 0) q.push([nx, ny]); } } } } } }
@@ -804,7 +831,7 @@ function disablePanels() { ['settingsPanel', 'createPanel', 'lobbyPanel', 'aiPla
     }
 
     canvas.addEventListener('click', (e) => {
-      if (!gameActive) return; if (audioCtx.state === 'suspended') audioCtx.resume();
+      if (!gameActive || isAutoBattleMode) return; if (audioCtx.state === 'suspended') audioCtx.resume();
       const rect = canvas.getBoundingClientRect(); const currentSize = isHost ? engine.size : (clientView ? clientView.size : 12); const cellSize = BOARD_PIXEL / currentSize;
       const x = Math.floor((e.clientX - rect.left) / (rect.width / BOARD_PIXEL) / cellSize); const y = Math.floor((e.clientY - rect.top) / (rect.height / BOARD_PIXEL) / cellSize);
       if (isAIToggledOn && !isPracticeMode && (engine.aiMode === '1' || engine.aiMode === '3')) { isAIToggledOn = false; btnToggleAI.classList.remove('active'); aiProbabilities = Array(engine.size * engine.size).fill(null); updateAIBtnUI(); drawBoard(); }
@@ -845,9 +872,25 @@ function disablePanels() { ['settingsPanel', 'createPanel', 'lobbyPanel', 'aiPla
       const scoreAV = players.A.score !== undefined ? players.A.score : (isHost ? engine.scoreA : 0), scoreBV = players.B.score !== undefined ? players.B.score : (isHost ? engine.scoreB : 0);
       document.getElementById('scoreA').innerText = scoreAV; document.getElementById('scoreA').style.color = players.A.color; document.getElementById('scoreB').innerText = scoreBV; document.getElementById('scoreB').style.color = players.B.color;
       if (engine.minesCount && gameActive) { const remaining = engine.minesCount - scoreAV - scoreBV; document.getElementById('remMinesText').innerText = `剩餘地雷: ${remaining}`; const winThreshold = Math.ceil(engine.minesCount / 2); const reqAV = Math.max(0, winThreshold - scoreAV), reqBV = Math.max(0, winThreshold - scoreBV); document.getElementById('reqA').innerText = `再奪${reqAV}個`; document.getElementById('reqA').style.color = players.A.color; document.getElementById('reqB').innerText = `再奪${reqBV}個`; document.getElementById('reqB').style.color = players.B.color; } 
-      else if (!gameActive && (scoreAV > 0 || scoreBV > 0)) { document.getElementById('remMinesText').innerText = ''; document.getElementById('reqA').innerText = ''; document.getElementById('reqB').innerText = ''; }
-      const container = document.getElementById('game-container');
-      if (!gameActive) { container.style.setProperty('--turn-color', 'transparent'); container.classList.remove('urgent'); } else { if (turn === 'A') container.style.setProperty('--turn-color', players.A.color); else if (turn === 'B') container.style.setProperty('--turn-color', players.B.color); if (engine.timeMode !== 'unlimited' && engine.timeMode !== 'none') { const currentRemaining = turn === 'A' ? engine.timeA : engine.timeB; if (currentRemaining <= 10) container.classList.add('urgent'); else container.classList.remove('urgent'); } else { container.classList.remove('urgent'); } }
+         else if (!gameActive && (scoreAV > 0 || scoreBV > 0)) {
+        if (!isAutoBattleMode) {
+          document.getElementById('remMinesText').innerText = '';
+          document.getElementById('reqA').innerText = '';
+          document.getElementById('reqB').innerText = '';
+        }
+      }
+  const container = document.getElementById('game-container');
+            if (!gameActive) {
+        if (scoreAV > scoreBV) {
+          container.style.setProperty('--turn-color', players.A.color);
+        } else if (scoreBV > scoreAV) {
+          container.style.setProperty('--turn-color', players.B.color);
+        } else {
+          container.style.setProperty('--turn-color', 'transparent');
+        }
+        container.classList.remove('urgent');
+      } else {
+if (turn === 'A') container.style.setProperty('--turn-color', players.A.color); else if (turn === 'B') container.style.setProperty('--turn-color', players.B.color); if (engine.timeMode !== 'unlimited' && engine.timeMode !== 'none') { const currentRemaining = turn === 'A' ? engine.timeA : engine.timeB; if (currentRemaining <= 10) container.classList.add('urgent'); else container.classList.remove('urgent'); } else { container.classList.remove('urgent'); } }
       autoFitAllTexts();
     }
 
@@ -876,6 +919,21 @@ function disablePanels() { ['settingsPanel', 'createPanel', 'lobbyPanel', 'aiPla
     }
 
     function showVictory(winnerCode, reason) {
+      if (isAutoBattleMode) {
+        autoGamesPlayed++;
+        if (winnerCode === 'A') autoScoreA++;
+        else if (winnerCode === 'B') autoScoreB++;
+        
+        updateAutoScoreBoard();
+        
+        if (autoTimeout) clearTimeout(autoTimeout);
+        autoTimeout = setTimeout(() => {
+          startGameEngine();
+          setTimeout(makeAIMove, 200);
+        }, 600);
+        return; 
+      }
+
       clearInterval(heartbeatInterval); clearInterval(heartbeatCheckInterval);
       updateAIBtnUI(); overlay.classList.remove('hidden');
       const wName = players[winnerCode].name, wColor = players[winnerCode].color;
@@ -958,7 +1016,6 @@ function disablePanels() { ['settingsPanel', 'createPanel', 'lobbyPanel', 'aiPla
       }
     }
 
-    // 新增：繪製分數與回合走勢圖函數
     function drawTrendChart() {
       const cvs = document.getElementById('trendChart');
       if (!cvs) return;
@@ -966,10 +1023,8 @@ function disablePanels() { ['settingsPanel', 'createPanel', 'lobbyPanel', 'aiPla
       const width = cvs.width;
       const height = cvs.height;
 
-      // 清除背景
       ctx.clearRect(0, 0, width, height);
 
-      // 解析每回合分數歷史
       let historyA = [0];
       let historyB = [0];
       let scoreA = 0;
@@ -985,20 +1040,17 @@ function disablePanels() { ['settingsPanel', 'createPanel', 'lobbyPanel', 'aiPla
       });
 
       const totalTurns = historyA.length - 1;
-      if (totalTurns === 0) return; // 若無紀錄則不畫
+      if (totalTurns === 0) return;
 
       const maxScore = Math.max(...historyA, ...historyB, 1);
-
-      // 圖表邊距與實際可用長寬
       const padding = { top: 20, right: 30, bottom: 30, left: 40 };
       const chartW = width - padding.left - padding.right;
       const chartH = height - padding.top - padding.bottom;
 
-      // 繪製網格線與 Y 軸文字
       ctx.strokeStyle = '#e2e8f0';
       ctx.lineWidth = 1;
       ctx.beginPath();
-      const steps = 4; // Y軸分4段
+      const steps = 4; 
       for (let i = 0; i <= steps; i++) {
         let y = padding.top + chartH - (i / steps) * chartH;
         ctx.moveTo(padding.left, y);
@@ -1013,20 +1065,16 @@ function disablePanels() { ['settingsPanel', 'createPanel', 'lobbyPanel', 'aiPla
       }
       ctx.stroke();
 
-      // 繪製 X 軸文字
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
       ctx.fillText('0', padding.left, height - padding.bottom + 10);
       ctx.fillText(totalTurns, width - padding.right, height - padding.bottom + 10);
       ctx.fillText('Turns', width / 2, height - padding.bottom + 10);
 
-      // 座標轉換器
       const getX = (index) => padding.left + (index / totalTurns) * chartW;
       const getY = (val) => padding.top + chartH - (val / maxScore) * chartH;
 
-      // 線條與漸層繪製函數
       const drawLine = (history, color, glowColor) => {
-        // 1. 填滿底部漸層
         ctx.beginPath();
         ctx.moveTo(getX(0), getY(history[0]));
         for (let i = 1; i <= totalTurns; i++) {
@@ -1041,7 +1089,6 @@ function disablePanels() { ['settingsPanel', 'createPanel', 'lobbyPanel', 'aiPla
         ctx.fillStyle = grad;
         ctx.fill();
 
-        // 2. 畫主要折線
         ctx.beginPath();
         ctx.moveTo(getX(0), getY(history[0]));
         for (let i = 1; i <= totalTurns; i++) {
@@ -1052,9 +1099,8 @@ function disablePanels() { ['settingsPanel', 'createPanel', 'lobbyPanel', 'aiPla
         ctx.shadowColor = color;
         ctx.shadowBlur = 8;
         ctx.stroke();
-        ctx.shadowBlur = 0; // 畫完線後重置發光，避免影響圓點
+        ctx.shadowBlur = 0; 
         
-        // 3. 在得分增加時畫白色實心小圓點
         for (let i = 1; i <= totalTurns; i++) {
           if (history[i] > history[i - 1]) {
             ctx.beginPath();
@@ -1079,7 +1125,6 @@ function disablePanels() { ['settingsPanel', 'createPanel', 'lobbyPanel', 'aiPla
       drawLine(historyA, colorA, glowA);
       drawLine(historyB, colorB, glowB);
     }
-
 
  async function downloadPDF() {
   const btn = document.getElementById('btnDownloadPDF'); btn.innerText = "Generating Tactical Report..."; btn.disabled = true;
@@ -1117,13 +1162,12 @@ function disablePanels() { ['settingsPanel', 'createPanel', 'lobbyPanel', 'aiPla
     document.getElementById('pdf-b-cons').innerText = sB.c;
     document.getElementById('pdf-b-inacc').innerText = sB.i; document.getElementById('pdf-b-miss').innerText = sB.m; document.getElementById('pdf-b-blun').innerText = sB.bl;
 
-    // 呼叫圖表繪製引擎
     drawTrendChart();
 
     const p1El = document.getElementById('pdf-page-1');
     const p1Cvs = await html2canvas(p1El, { scale: userScale });
     
-pdf.addImage(p1Cvs.toDataURL('image/jpeg'), 'JPEG', 0, 0, pdfWidth, pdfHeight);
+    pdf.addImage(p1Cvs.toDataURL('image/jpeg'), 'JPEG', 0, 0, pdfWidth, pdfHeight);
 
     const tacticalContainer = document.getElementById('pdf-tactical-pages'); tacticalContainer.innerHTML = '';
     const criticalMistakes = engine.matchLogs.filter(l => l.snap !== null);
@@ -1147,7 +1191,6 @@ pdf.addImage(p1Cvs.toDataURL('image/jpeg'), 'JPEG', 0, 0, pdfWidth, pdfHeight);
       const tCanvas = document.createElement('canvas'); tCanvas.width = 700 * userScale; tCanvas.height = 700 * userScale;
       const tctx = tCanvas.getContext('2d'); tctx.scale(userScale, userScale);
       drawSnapshotBoard(tctx, log); 
-      // 這裡作為 HTML img 標籤顯示，保留原狀或改 JPEG 皆可，此處保留維持 DOM 渲染正常
       const imgData = tCanvas.toDataURL('image/png');
 
       const pageDiv = document.createElement('div'); pageDiv.className = 'pdf-page';
@@ -1166,7 +1209,6 @@ pdf.addImage(p1Cvs.toDataURL('image/jpeg'), 'JPEG', 0, 0, pdfWidth, pdfHeight);
       tacticalContainer.appendChild(pageDiv);
       const pCvs = await html2canvas(pageDiv, { scale: userScale }); pdf.addPage(); 
       
-      // 【修改點 2】：戰術錯題本內頁圖片改為 JPEG 並加入壓縮參數 'FAST'
       pdf.addImage(pCvs.toDataURL('image/jpeg', 0.75), 'JPEG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
     }
 
@@ -1175,7 +1217,6 @@ pdf.addImage(p1Cvs.toDataURL('image/jpeg'), 'JPEG', 0, 0, pdfWidth, pdfHeight);
       perfDiv.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;text-align:center;"><div style="font-size:80px;">🏆</div><div style="font-size:42px;font-weight:900;color:#4ade80;margin:20px 0;">PERFECT GAME</div><div style="font-size:24px;color:#64748b;">No critical blunders, inaccuracies, or missed mines detected.</div></div>`;
       tacticalContainer.appendChild(perfDiv); const perfCvs = await html2canvas(perfDiv, { scale: userScale }); pdf.addPage(); 
       
-      // 【修改點 3】：完美過關畫面圖片改為 JPEG 並加入壓縮參數 'FAST'
       pdf.addImage(perfCvs.toDataURL('image/jpeg', 0.75), 'JPEG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
     }
     const d = new Date();
