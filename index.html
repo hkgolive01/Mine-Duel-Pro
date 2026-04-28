@@ -211,9 +211,9 @@
       <label>難度係數: <span id="aiDiffVal" style="color:var(--accent)">1.00</span></label>
       <input type="range" id="aiDifficulty" min="0.10" max="1.00" step="0.01" value="1.00">
       <button id="btnStartAI" class="btn-ai">開始與 AI 對戰</button>
-          <button id="btnStartOmega" class="btn-danger" style="background: linear-gradient(135deg, #0f172a, #1e293b); box-shadow: 0 4px 15px rgba(0,0,0,0.3); border: none;">挑戰 Omega AI</button>
-      <p style="font-size: 11px; color: #ef4444; text-align: center; margin-top: 5px; margin-bottom: 5px;">* 挑戰 Omega AI 時將強制禁用 AI 分析</p>
-  <button id="btnStartAutoAI" class="btn-action" style="background: linear-gradient(135deg, #4b5563, #1f2937); color: white; border: none; margin-top: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">AI-1.00 vs Omega</button>
+          <button id="btnStartainixingo" class="btn-danger" style="background: linear-gradient(135deg, #0f172a, #1e293b); box-shadow: 0 4px 15px rgba(0,0,0,0.3); border: none;">挑戰 ainixingo AI</button>
+      <p style="font-size: 11px; color: #ef4444; text-align: center; margin-top: 5px; margin-bottom: 5px;">* 挑戰 ainixingo AI 時將強制禁用 AI 分析</p>
+  <button id="btnStartAutoAI" class="btn-action" style="background: linear-gradient(135deg, #4b5563, #1f2937); color: white; border: none; margin-top: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">AI-1.00 vs ainixingo</button>
     </div>
 
     <div class="panel" id="createPanel">
@@ -371,7 +371,7 @@
     function updateAutoScoreBoard() {
       const board = document.getElementById('autoScoreBoard');
       if (board && isAutoBattleMode) {
-        board.innerHTML = `${autoGamesPlayed} | AI-1.00 <span style="color:#3b82f6">[${autoScoreA}]</span> : <span style="color:#f87171">[${autoScoreB}]</span> Omega`;
+        board.innerHTML = `${autoGamesPlayed} | AI-1.00 <span style="color:#3b82f6">[${autoScoreA}]</span> : <span style="color:#f87171">[${autoScoreB}]</span> ainixingo`;
       }
     }
 
@@ -410,19 +410,19 @@
       if (engine.turn === 'B') setTimeout(makeAIMove, 800);
     });
 
-    document.getElementById('btnStartOmega').addEventListener('click', () => {
+    document.getElementById('btnStartainixingo').addEventListener('click', () => {
       if (audioCtx.state === 'suspended') audioCtx.resume(); 
       isHost = true; isPracticeMode = false; isAIMode = true; isAutoBattleMode = false;
       players.A = { name: myNameInput.value || "Player 1", color: myColorInput.value };
-      players.B = { name: "Omega AI", color: "#0f172a" }; 
+      players.B = { name: "ainixingo AI", color: "#0f172a" }; 
       
       engine.size = parseInt(document.getElementById('mapSize').value); 
       engine.minesCount = parseInt(document.getElementById('mineCount').value);
       engine.timeMode = document.getElementById('timeMode').value; 
       
-      // 強制覆蓋玩家的選擇，將 aiMode 設為 'none'，禁止在對戰 Omega 時使用 AI 提示
+      // 強制覆蓋玩家的選擇，將 aiMode 設為 'none'，禁止在對戰 ainixingo 時使用 AI 提示
       engine.aiMode = 'none'; 
-      engine.aiDifficulty = 'omega'; 
+      engine.aiDifficulty = 'ainixingo'; 
       
       stopBroadcastingLobby(); if(peer) peer.destroy(); if(conn) conn.close(); disablePanels(); startGameEngine();
       if (engine.turn === 'B') setTimeout(makeAIMove, 800);
@@ -434,7 +434,7 @@
       if (audioCtx.state === 'suspended') audioCtx.resume(); 
       isHost = true; isPracticeMode = false; isAIMode = true; isAutoBattleMode = true;
       players.A = { name: "AI-1.00", color: "#3b82f6" };
-      players.B = { name: "Omega", color: "#0f172a" }; 
+      players.B = { name: "ainixingo", color: "#0f172a" }; 
       
       autoScoreA = 0; autoScoreB = 0; autoGamesPlayed = 0;
       document.getElementById('autoScoreBoard').style.display = 'block';
@@ -465,11 +465,11 @@
         } 
       }
       
-      let currentDifficulty = isAutoBattleMode ? (engine.turn === 'A' ? 1.0 : 'omega') : engine.aiDifficulty;
+      let currentDifficulty = isAutoBattleMode ? (engine.turn === 'A' ? 1.0 : 'ainixingo') : engine.aiDifficulty;
       if (candidates.length > 0) {
         candidates.sort((a, b) => b.prob - a.prob); 
         
-        if (currentDifficulty === 'omega') {
+        if (currentDifficulty === 'ainixingo') {
           let maxProb = candidates[0].prob;
           let bestCandidates = candidates.filter(c => Math.abs(c.prob - maxProb) < 0.001);
           
@@ -477,7 +477,7 @@
             chosenIdx = bestCandidates[0].index;
           } else {
             // ==========================================
-            // 🔥 究極 Omega AI：三層連續篩選戰術
+            // 🔥 究極 ainixingo AI：三層連續篩選戰術
             // ==========================================
             let evaluatedCandidates = bestCandidates.map(c => {
               let idx = c.index;
@@ -831,12 +831,12 @@
 
 
        let snap = null; 
-      let omegaIdx = -1; // 用來儲存 Omega AI 最終決定的格子索引
+      let ainixingoIdx = -1; // 用來儲存 ainixingo AI 最終決定的格子索引
 
       if (category === 'Blunder' || category === 'Missed Mine' || category === 'Inaccuracy') { 
           snap = { rev: [...engine.revealed], own: [...engine.owners], probs: [...aiProbabilities] }; 
           
-          // --- 🧠 呼叫 Omega AI 三層決策邏輯，找出當下唯一的最佳解 ---
+          // --- 🧠 呼叫 ainixingo AI 三層決策邏輯，找出當下唯一的最佳解 ---
           let bestCands = [];
           for (let i = 0; i < engine.size * engine.size; i++) {
               if (!engine.revealed[i] && aiProbabilities[i] !== null && Math.abs(aiProbabilities[i] - maxProb) < 0.001) {
@@ -845,9 +845,9 @@
           }
           if (bestCands.length > 0) {
               if (bestCands.length === 1 || maxProb > 0.999) {
-                  omegaIdx = bestCands[0]; // 如果只有一個最佳解，或已經是100%確定，直接選定
+                  ainixingoIdx = bestCands[0]; // 如果只有一個最佳解，或已經是100%確定，直接選定
               } else {
-                  // 如果機率平手，啟動 Omega 三層評估
+                  // 如果機率平手，啟動 ainixingo 三層評估
                   let evaluated = bestCands.map(i => {
                       let cx = i % engine.size, cy = Math.floor(i / engine.size);
                       let l1 = 0, l2 = 0;
@@ -872,13 +872,13 @@
                       if (a.l2 !== b.l2) return b.l2 - a.l2;
                       return a.dist - b.dist;
                   });
-                  omegaIdx = evaluated[0].index; // 取得唯一的最優解
+                  ainixingoIdx = evaluated[0].index; // 取得唯一的最優解
               }
           }
       }
       
-      // 將 omegaIdx 一併寫入日誌中
-      engine.matchLogs.push({ p: playerRole, t: engine.matchLogs.length + 1, x: x, y: y, cp: clickProb, mp: maxProb, d: delta, cat: category, mine: engine.mines[idx], snap: snap, omegaIdx: omegaIdx });
+      // 將 ainixingoIdx 一併寫入日誌中
+      engine.matchLogs.push({ p: playerRole, t: engine.matchLogs.length + 1, x: x, y: y, cp: clickProb, mp: maxProb, d: delta, cat: category, mine: engine.mines[idx], snap: snap, ainixingoIdx: ainixingoIdx });
       engine.revealed[idx] = true; engine.lastMove = { x: x, y: y, p: playerRole }; 
 
       if (engine.mines[idx]) {
@@ -1092,7 +1092,7 @@ if (turn === 'A') container.style.setProperty('--turn-color', players.A.color); 
           if (!rev && snap.probs[idx] === log.mp && log.mp > 0) { 
             tctx.strokeStyle = '#4ade80'; 
             
-            if (idx === log.omegaIdx) {
+            if (idx === log.ainixingoIdx) {
               tctx.lineWidth = 4; 
               tctx.shadowColor = '#4ade80';
               tctx.shadowBlur = 12;
@@ -1319,8 +1319,8 @@ if (turn === 'A') container.style.setProperty('--turn-color', players.A.color); 
           <!-- 1. 玩家點擊：紅色空心圓圈 -->
           <div class="legend-item"><div class="legend-color" style="border: 4px solid #ef4444; border-radius: 50%; background: transparent; box-sizing: border-box;"></div> <span>Your Click</span></div>
           
-          <!-- 2. Omega AI 最終選擇：綠色發光實線框 -->
-          <div class="legend-item"><div class="legend-color" style="border: 4px solid #4ade80; border-radius: 4px; box-shadow: 0 0 8px #4ade80; background: transparent; box-sizing: border-box;"></div> <span>Omega Choice</span></div>
+          <!-- 2. ainixingo AI 最終選擇：綠色發光實線框 -->
+          <div class="legend-item"><div class="legend-color" style="border: 4px solid #4ade80; border-radius: 4px; box-shadow: 0 0 8px #4ade80; background: transparent; box-sizing: border-box;"></div> <span>ainixingo Choice</span></div>
           
           <!-- 3. 其他同等高勝率選擇：綠色虛線框 -->
           <div class="legend-item"><div class="legend-color" style="border: 3px dashed #4ade80; border-radius: 4px; background: transparent; box-sizing: border-box;"></div> <span>Alternative Best</span></div>
