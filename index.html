@@ -446,7 +446,7 @@
       setTimeout(makeAIMove, 500);
     });
 
-    function makeAIMove() {
+       function makeAIMove() {
       if (!gameActive || !isAIMode) return;
       if (!isAutoBattleMode && engine.turn !== 'B') return;
       
@@ -462,9 +462,9 @@
       }
       
       let currentDifficulty = isAutoBattleMode ? (engine.turn === 'A' ? 1.0 : 'omega') : engine.aiDifficulty;
-
       if (candidates.length > 0) {
         candidates.sort((a, b) => b.prob - a.prob); 
+        
         if (currentDifficulty === 'omega') {
           let maxProb = candidates[0].prob;
           let bestCandidates = candidates.filter(c => Math.abs(c.prob - maxProb) < 0.001);
@@ -472,32 +472,90 @@
           if (bestCandidates.length === 1 || maxProb > 0.999) {
             chosenIdx = bestCandidates[0].index;
           } else {
-            let bestScore = -Infinity; 
+            // ==========================================
+            // 🔥 真・Omega AI：期望值與單步推演核心邏輯
+            // ==========================================
+            let bestScore = -Infinity;
+            
+            // 1. 備份真實盤面狀態與機率 (為了在腦海中模擬下棋)
+            let originalRevealed = [...engine.revealed];
+            let originalMines = [...engine.mines];
+            let originalScoreA = engine.scoreA;
+            let originalScoreB = engine.scoreB;
+            let originalProbs = [...aiProbabilities];
+            
+            // 計算目前畫面上已經有幾個 100% 確定的地雷
+            let current100Mines = originalProbs.filter(p => p > 0.999).length;
+
             for (let c of bestCandidates) {
               let idx = c.index;
               let x = idx % engine.size;
               let y = Math.floor(idx / engine.size);
-              let unknownNeighbors = 0;
-              let touchingFrontierNumbers = 0; 
+              let p = c.prob; // 當前格子的地雷機率
               
+              // === 模擬情境 A：如果這格「是」地雷 ===
+              engine.revealed[idx] = true;
+              engine.mines[idx] = true;
+              // 模擬得分，讓機率引擎正確扣除剩餘未知的地雷總數
+              if (engine.turn === 'A') engine.scoreA++; 
+              else engine.scoreB++; 
+              
+              calculateAIProbabilities(); // 重新推演未來盤面
+              let minesIfHit = aiProbabilities.filter(prob => prob > 0.999).length;
+              let newGainedMines = Math.max(0, minesIfHit - current100Mines);
+              
+              // 猜中收益：保底 1 分 + (附帶產生的新 100% 地雷數量 * 2.0)
+              let v_mine = 1 + (newGainedMines * 2.0);
+              
+              // 還原狀態，準備下一次推演
+              engine.revealed[idx] = originalRevealed[idx];
+              engine.mines[idx] = originalMines[idx];
+              engine.scoreA = originalScoreA;
+              engine.scoreB = originalScoreB;
+
+              // === 模擬情境 B：如果這格「不是」地雷 (安全格) ===
+              // 因為無法預知會開出什麼數字，我們用防守直覺來精準評估代價
+              let unknownNeighbors = 0;
+              let touchingFrontierNumbers = 0;
               for (let dy = -1; dy <= 1; dy++) {
                 for (let dx = -1; dx <= 1; dx++) {
                   if (dx === 0 && dy === 0) continue;
                   let nx = x + dx, ny = y + dy;
                   if (nx >= 0 && nx < engine.size && ny >= 0 && ny < engine.size) {
                     let nIdx = ny * engine.size + nx;
-                    if (!engine.revealed[nIdx]) {
+                    if (!originalRevealed[nIdx]) {
                       unknownNeighbors++;
-                    } else if (engine.numbers[nIdx] > 0 && !engine.mines[nIdx]) {
+                    } else if (engine.numbers[nIdx] > 0 && !originalMines[nIdx]) {
                       touchingFrontierNumbers++;
                     }
                   }
                 }
               }
+              // 猜錯代價：接觸現有數字越多，越容易送對手線索 (重罰 5.0 分)
+              // 周圍全是黑霧，開出大片空地送情報的風險 (輕罰 1.0 分)
+              let v_safe = 0 - (touchingFrontierNumbers * 5.0) - (unknownNeighbors * 1.0);
+
+              // === 結合期望值公式 ===
+              // 期望分數 = (是地雷的機率 * 猜中收益) + (不是地雷的機率 * 猜錯代價)
+              let expectedScore = (p * v_mine) + ((1 - p) * v_safe);
+              
+              // 微調：期望值完全相同時，稍微偏好往中心點擊 (增加掌控力)
               let distToCenter = Math.abs(x - engine.size/2) + Math.abs(y - engine.size/2);
-              let score = (unknownNeighbors * 10) - (touchingFrontierNumbers * 15) - (distToCenter * 2);
-              if (score > bestScore) { bestScore = score; chosenIdx = idx; }
+              let finalScore = expectedScore - (distToCenter * 0.1); 
+
+              if (finalScore > bestScore) { 
+                bestScore = finalScore; 
+                chosenIdx = idx; 
+              }
             }
+            
+            // 迴圈結束，徹底還原所有全域狀態 (非常重要，否則遊戲會崩潰)
+            engine.revealed = [...originalRevealed];
+            engine.mines = [...originalMines];
+            engine.scoreA = originalScoreA;
+            engine.scoreB = originalScoreB;
+            aiProbabilities = [...originalProbs];
+            // ==========================================
           }
         }
         else {
