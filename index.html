@@ -446,7 +446,7 @@
       setTimeout(makeAIMove, 500);
     });
 
-        function makeAIMove() {
+    function makeAIMove() {
       if (!gameActive || !isAIMode) return;
       if (!isAutoBattleMode && engine.turn !== 'B') return;
       
@@ -465,7 +465,7 @@
       if (candidates.length > 0) {
         candidates.sort((a, b) => b.prob - a.prob); 
         
-             if (currentDifficulty === 'omega') {
+        if (currentDifficulty === 'omega') {
           let maxProb = candidates[0].prob;
           let bestCandidates = candidates.filter(c => Math.abs(c.prob - maxProb) < 0.001);
           
@@ -473,15 +473,15 @@
             chosenIdx = bestCandidates[0].index;
           } else {
             // ==========================================
-            // 🔥 究極 Omega AI：雙層雷達戰術 (Layer 1 最少雷 -> Layer 2 最多雷 -> 中心)
+            // 🔥 究極 Omega AI：三層連續篩選戰術
             // ==========================================
             let evaluatedCandidates = bestCandidates.map(c => {
               let idx = c.index;
               let x = idx % engine.size;
               let y = Math.floor(idx / engine.size);
               
-              let layer1Mines = 0; // 第一層：周圍 8 格的地雷數
-              let layer2Mines = 0; // 第二層：外圍 24 格的地雷數
+              let layer1Mines = 0; // 第一層：周圍 8 格已翻開的地雷數
+              let layer2Mines = 0; // 第二層：外圍 24 格已翻開的地雷數
               
               // 一次掃描 5x5 的範圍
               for (let dy = -2; dy <= 2; dy++) {
@@ -492,7 +492,6 @@
                   if (nx >= 0 && nx < engine.size && ny >= 0 && ny < engine.size) {
                     let nIdx = ny * engine.size + nx;
                     
-                    // 如果該位置已翻開且是地雷
                     if (engine.revealed[nIdx] && engine.mines[nIdx]) {
                       // 判斷是第一層還是第二層
                       if (Math.abs(dx) <= 1 && Math.abs(dy) <= 1) {
@@ -508,35 +507,31 @@
               // 計算到地圖中心的距離 (曼哈頓距離)
               let centerDist = Math.abs(x - engine.size / 2) + Math.abs(y - engine.size / 2);
               
-              return { index: idx, layer1Mines, layer2Mines, centerDist };
+              // 核心轉換：第一層我們希望「大於 0 且越小越好」。
+              // 如果是 0，我們給它一個極大的分數 (999)，讓它在第一層排序中墊底。
+              let layer1Score = layer1Mines > 0 ? layer1Mines : 999;
+              
+              return { index: idx, layer1Score, layer2Mines, centerDist };
             });
 
-            // 步驟 1：先看看有沒有任何候選格子「第一層有雷」
-            let candidatesWithLayer1 = evaluatedCandidates.filter(c => c.layer1Mines > 0);
+            // 執行三層連續排序
+            evaluatedCandidates.sort((a, b) => {
+              // 第一層：8 格內有地雷且最少 (分數越小越優先)
+              if (a.layer1Score !== b.layer1Score) {
+                return a.layer1Score - b.layer1Score; 
+              }
+              // 第二層：(第一層平手時) 24 格內地雷最多 (越大越優先)
+              if (a.layer2Mines !== b.layer2Mines) {
+                return b.layer2Mines - a.layer2Mines; 
+              }
+              // 第三層：(第二層也平手時) 最接近中心 (距離越小越優先)
+              return a.centerDist - b.centerDist;     
+            });
 
-            if (candidatesWithLayer1.length > 0) {
-              // 戰術 A：第一層有雷 -> 找第一層地雷「最少」的，平手找中心
-              candidatesWithLayer1.sort((a, b) => {
-                if (a.layer1Mines !== b.layer1Mines) {
-                  return a.layer1Mines - b.layer1Mines; // Ascending: 最少優先
-                }
-                return a.centerDist - b.centerDist;     // Tie: 越近中心優先
-              });
-              chosenIdx = candidatesWithLayer1[0].index;
-
-            } else {
-              // 戰術 B：第一層全部都是 0 雷 -> 啟動第二層邏輯，找第二層地雷「最多」的，平手找中心
-              evaluatedCandidates.sort((a, b) => {
-                if (a.layer2Mines !== b.layer2Mines) {
-                  return b.layer2Mines - a.layer2Mines; // Descending: 最多優先
-                }
-                return a.centerDist - b.centerDist;     // Tie: 越近中心優先
-              });
-              chosenIdx = evaluatedCandidates[0].index;
-            }
+            chosenIdx = evaluatedCandidates[0].index;
+            // ==========================================
           }
         }
-
         else {
           let difficulty = parseFloat(currentDifficulty);
           for (let i = 0; i < candidates.length; i++) { 
