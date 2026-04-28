@@ -241,8 +241,8 @@
 
     <div class="panel" id="pdfSetupPanel">
       <h3>7. PDF 設置 📄</h3>
-      <label>清晰度倍率: <span id="pdfScaleVal" style="color:var(--accent)">6.0x</span></label>
-      <input type="range" id="pdfScale" min="1.0" max="10.0" step="0.1" value="6.0">
+      <label>清晰度倍率: <span id="pdfScaleVal" style="color:var(--accent)">2.0x</span></label>
+      <input type="range" id="pdfScale" min="1.0" max="10.0" step="0.1" value="2.0">
     </div>
   </div>
 
@@ -1160,7 +1160,7 @@ if (turn === 'A') container.style.setProperty('--turn-color', players.A.color); 
 
  async function downloadPDF() {
   const btn = document.getElementById('btnDownloadPDF'); btn.innerText = "Generating Tactical Report..."; btn.disabled = true;
-  const userScale = parseFloat(document.getElementById('pdfScale').value) || 6.0;
+  const userScale = parseFloat(document.getElementById('pdfScale').value) || 2.0;
 
   try {
     const { jsPDF } = window.jspdf; const pdf = new jsPDF('p', 'pt', 'a4'); 
